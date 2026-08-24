@@ -123,6 +123,11 @@
   @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field label { font-size: 13px; font-weight: 600; color: #444; }
+  .field-note { font-size: 12.5px; color: #86868b; margin-top: 6px; }
+  .age-hint {
+    margin-top: 8px; padding: 8px 12px; border-radius: 10px;
+    background: #eef6ff; color: #0071e3; font-size: 13px; font-weight: 600;
+  }
   .field input[type="text"], .field input[type="number"], .field select {
     padding: 10px 12px; border-radius: 10px; border: 1.5px solid #e5e5ea;
     background: #f9f9fb; font-size: 14.5px; font-family: inherit; color: #1d1d1f;
@@ -297,8 +302,8 @@
       name: "男女防癌險",
       icon: "🎗️",
       products: [
-        { code: "CLZ", status: "ready", calcType: "CANCER", apiProduct: "CLZ", fixedGender: "男" },
-        { code: "CLX", status: "ready", calcType: "CANCER", apiProduct: "CLX", fixedGender: "女" },
+        { code: "CLZ", status: "ready", calcType: "CANCER", apiProduct: "CLZ", fixedGender: "男", genderLabel: "（男性專屬）" },
+        { code: "CLX", status: "ready", calcType: "CANCER", apiProduct: "CLX", fixedGender: "女", genderLabel: "（女性專屬）" },
       ]
     },
   ];
@@ -349,7 +354,7 @@
     const listEl = document.getElementById('product-list');
     listEl.innerHTML = mod.products.map((p, i) => `
       <div class="product-row" onclick="showProduct(${index}, ${i})">
-        <span class="product-code">${p.code}</span>
+        <span class="product-code">${p.code}${p.genderLabel ? ` <span style="font-weight:400;color:#86868b;">${p.genderLabel}</span>` : ''}</span>
         <span class="product-status ${p.status}">${p.status === 'ready' ? '已建置' : '尚未建置'}</span>
       </div>
     `).join('');
@@ -371,6 +376,7 @@
     } else if (product.calcType === 'CANCER') {
       contentEl.innerHTML = renderCancerFormHTML(product);
       document.getElementById('cancer-submit-btn').addEventListener('click', () => submitCancerCalc(product));
+      initCancerAgeHint();
     } else {
       contentEl.innerHTML = `<div class="placeholder-box">${
         product.status === 'ready'
@@ -703,6 +709,7 @@
             <input type="number" id="cancer-birth-day" placeholder="日" min="1" max="31">
             <span>日</span>
           </div>
+          <div class="age-hint" id="cancer-age-hint" style="display:none;"></div>
         </div>
       </div>
 
@@ -726,10 +733,12 @@
             </select>
           </div>
         </div>
+        <div class="field-note">投保年齡：10年期 18足歲～60歲；20年期 18足歲～50歲</div>
         <div class="field" style="margin-top:14px;">
           <label>保額（萬元）</label>
           <input type="number" id="cancer-face-amount" value="50" min="0" step="1">
         </div>
+        <div class="field-note">保額範圍：50 ~ 300 萬</div>
       </div>
 
       <details class="advanced">
@@ -773,6 +782,71 @@
         <button class="download-pdf-btn" id="cancer-download-btn" style="display:none;">📄 下載 PDF 建議書</button>
       </div>
     `;
+  }
+
+  // ---- 保險年齡／實際年齡即時試算（與官方 Excel 之六個月進位規則一致） ----
+  // 保險年齡：與最近一次生日相差超過六個月（含當日已過生日者以六個月整為界）即加算一歲；
+  // 實際年齡：單純的足歲（週歲）。
+  function calcInsuranceAndActualAge(rocYear, month, day, today) {
+    const adBirthYear = Number(rocYear) + 1911;
+    const birth = new Date(adBirthYear, Number(month) - 1, Number(day));
+    if (isNaN(birth.getTime())) return null;
+
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+    const birthYear = birth.getFullYear();
+    const birthMonth = birth.getMonth() + 1;
+    const birthDay = birth.getDate();
+
+    if (birth > today) return null; // 尚未出生
+
+    // 實際年齡（足歲）
+    let actualAge = todayYear - birthYear;
+    if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
+      actualAge -= 1;
+    }
+
+    // 保險年齡（滿六個月進位制，邏輯對應原始 Excel 公式）
+    let insuranceAge;
+    if (todayMonth < birthMonth) {
+      const diff = todayMonth + 12 - birthMonth;
+      insuranceAge = (diff > 6 || (diff === 6 && todayDay > birthDay))
+        ? (todayYear - 1 - birthYear + 1)
+        : (todayYear - 1 - birthYear);
+    } else {
+      const diff = todayMonth - birthMonth;
+      insuranceAge = (diff > 6 || (diff === 6 && todayDay > birthDay))
+        ? (todayYear - birthYear + 1)
+        : (todayYear - birthYear);
+    }
+
+    return { insuranceAge, actualAge };
+  }
+
+  function initCancerAgeHint() {
+    const yearEl = document.getElementById('cancer-birth-year');
+    const monthEl = document.getElementById('cancer-birth-month');
+    const dayEl = document.getElementById('cancer-birth-day');
+    const hintEl = document.getElementById('cancer-age-hint');
+    if (!yearEl || !monthEl || !dayEl || !hintEl) return;
+
+    function update() {
+      const y = yearEl.value, m = monthEl.value, d = dayEl.value;
+      if (!y || !m || !d) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      const result = calcInsuranceAndActualAge(y, m, d, new Date());
+      if (!result) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      hintEl.textContent = `保險年齡 ${result.insuranceAge} 歲　實際年齡 ${result.actualAge} 歲`;
+      hintEl.style.display = 'block';
+    }
+
+    [yearEl, monthEl, dayEl].forEach(el => el.addEventListener('input', update));
   }
 
   const CANCER_TABLE_COLUMNS = [
@@ -842,7 +916,7 @@
     const p = data.premiums || {};
     summaryEl.innerHTML = `
       <div class="summary-tile"><div class="label">保額（萬元）</div><div class="value">${fmtNum(p.final_face_amount_wan)}</div></div>
-      <div class="summary-tile"><div class="label">首期實繳保費</div><div class="value">${fmtNum(p.first_period_premium)}</div></div>
+      <div class="summary-tile"><div class="label">年繳保費</div><div class="value">${fmtNum(p.annual_premium_gross)}</div></div>
       <div class="summary-tile"><div class="label">首年實繳保費</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
       <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${fmtNum(p.renewal_year_premium)}</div></div>
     `;
