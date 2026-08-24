@@ -210,7 +210,7 @@
   <div class="container" id="main-content" style="display:none;">
 
     <!-- 頂部品牌列 -->
-    <div style="display:flex; align-items:center; margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
       <img src="avatar.png" alt="頭像" style="width:72px; height:72px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.15);">
     </div>
 
@@ -692,13 +692,6 @@
             <label>姓名</label>
             <input type="text" id="cancer-name" value="客戶">
           </div>
-          <div class="field">
-            <label>要保人與被保險人關係</label>
-            <select id="cancer-relationship">
-              <option value="同被保險人">同被保險人</option>
-              <option value="與被保險人不同">與被保險人不同</option>
-            </select>
-          </div>
         </div>
         <div class="field" style="margin-top:14px;">
           <label>生日（民國）</label>
@@ -809,7 +802,6 @@
 
     const payload = {
       name: document.getElementById('cancer-name').value || '客戶',
-      relationship: document.getElementById('cancer-relationship').value,
       birth_year: Number(birthYear),
       birth_month: Number(birthMonth),
       birth_day: Number(birthDay),
