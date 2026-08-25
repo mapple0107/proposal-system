@@ -288,7 +288,10 @@
           ageHint: "10年期 15足歲～70歲；20年期 15足歲～60歲；30年期 15足歲～50歲" },
         { code: "LTT", status: "ready", calcType: "LTQT", apiProduct: "LTT",
           ageHint: "10年期 15足歲～65歲；20年期 15足歲～55歲；30年期 15足歲～45歲" },
-        { code: "LTP", status: "pending" },
+        { code: "LTP", status: "ready", calcType: "LTQT", apiProduct: "LTP",
+          ageHint: "10年期 15足歲～65歲；20年期 15足歲～60歲；30年期 15足歲～50歲",
+          faceAmountDefault: 100, faceAmountMin: 30, faceAmountStep: 1,
+          faceRangeHint: "保額範圍：30 ~ 300 萬（實際上限依投保年齡可能調整，66歲以上不得承保）" },
       ]
     },
     {
@@ -1241,9 +1244,9 @@
         <div class="field-note">投保年齡：${product.ageHint || ''}</div>
         <div class="field" style="margin-top:14px;">
           <label>保額（萬元）</label>
-          <input type="number" id="ltqt-face-amount" value="2" min="0" step="0.1">
+          <input type="number" id="ltqt-face-amount" value="${product.faceAmountDefault ?? 2}" min="${product.faceAmountMin ?? 0}" step="${product.faceAmountStep ?? 0.1}">
         </div>
-        <div class="field-note">保額範圍：0.5 ~ 5 萬（實際上限依投保年齡可能調整，61歲以上上限降為 3 萬）</div>
+        <div class="field-note">${product.faceRangeHint || '保額範圍：0.5 ~ 5 萬（實際上限依投保年齡可能調整，61歲以上上限降為 3 萬）'}</div>
       </div>
 
       <details class="advanced">
@@ -1320,6 +1323,8 @@
     { key: 'annual_premium', label: '年度保費' },
     { key: 'cum_premium', label: '累計保費' },
     { key: 'death_benefit', label: '身故/完全失能保障' },
+    { key: 'cash_value', label: '年度末解約金' },
+    { key: 'reduced_paid_up', label: '減額繳清保額' },
   ];
 
   async function submitLTQTCalc(product) {
