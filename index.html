@@ -216,7 +216,7 @@
 
     <!-- 頂部品牌列 -->
     <div style="display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
-      <img src="avatar.png" alt="頭像" style="width:72px; height:72px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.15);">
+      <img src="avatar.png" alt="頭像" style="width:112px; height:112px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.15);">
     </div>
 
     <!-- 首頁：模組列表 -->
@@ -355,7 +355,7 @@
     listEl.innerHTML = mod.products.map((p, i) => `
       <div class="product-row" onclick="showProduct(${index}, ${i})">
         <span class="product-code">${p.code}${p.genderLabel ? ` <span style="font-weight:400;color:#86868b;">${p.genderLabel}</span>` : ''}</span>
-        <span class="product-status ${p.status}">${p.status === 'ready' ? '已建置' : '尚未建置'}</span>
+        ${p.status === 'ready' ? '' : `<span class="product-status ${p.status}">尚未建置</span>`}
       </div>
     `).join('');
     switchView('view-module');
