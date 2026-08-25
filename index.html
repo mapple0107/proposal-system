@@ -672,7 +672,7 @@
     }
     const head = '<tr>' + PFA_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = tableData.rows.map(row =>
-      '<tr>' + PFA_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? Math.round(row[c.key] ?? 0) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + PFA_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
   }
@@ -938,7 +938,7 @@
     const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
     const head = '<tr>' + CANCER_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = rows.map(row =>
-      '<tr>' + CANCER_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? Math.round(row[c.key] ?? 0) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + CANCER_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
 
@@ -1166,7 +1166,7 @@
     const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
     const head = '<tr>' + LTS_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = rows.map(row =>
-      '<tr>' + LTS_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? Math.round(row[c.key] ?? 0) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + LTS_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
 
@@ -1390,7 +1390,7 @@
     const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
     const head = '<tr>' + LTQT_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = rows.map(row =>
-      '<tr>' + LTQT_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? Math.round(row[c.key] ?? 0) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + LTQT_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
 
