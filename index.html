@@ -282,7 +282,7 @@
       name: "長期照顧險",
       icon: "🩺",
       products: [
-        { code: "LTS", status: "pending" },
+        { code: "LTS", status: "ready", calcType: "LTS", apiProduct: "LTS" },
         { code: "LTQ", status: "pending" },
         { code: "LTT", status: "pending" },
       ]
@@ -377,6 +377,11 @@
       contentEl.innerHTML = renderCancerFormHTML(product);
       document.getElementById('cancer-submit-btn').addEventListener('click', () => submitCancerCalc(product));
       initCancerAgeHint();
+    } else if (product.calcType === 'LTS') {
+      contentEl.innerHTML = renderLTSFormHTML(product);
+      initRadioGroups(contentEl);
+      document.getElementById('lts-submit-btn').addEventListener('click', () => submitLTSCalc(product));
+      initLTSAgeHint();
     } else {
       contentEl.innerHTML = `<div class="placeholder-box">${
         product.status === 'ready'
@@ -938,6 +943,234 @@
     }
 
     document.getElementById('cancer-result-box').style.display = 'block';
+  }
+
+  // ============================================================
+  // LTS（詠馨久久長期照顧終身壽險）試算表單
+  // ============================================================
+  const LTS_API_BASE = PFA_API_BASE;
+
+  function renderLTSFormHTML(product) {
+    return `
+      <div class="form-section">
+        <div class="form-section-title">被保險人基本資料</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>姓名</label>
+            <input type="text" id="lts-name" value="客戶">
+          </div>
+          <div class="field">
+            <label>性別</label>
+            <div class="radio-group" data-target="lts-gender">
+              <div class="radio-pill active" data-value="女">女</div>
+              <div class="radio-pill" data-value="男">男</div>
+            </div>
+            <input type="hidden" id="lts-gender" value="女">
+          </div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>生日（民國）</label>
+          <div class="birth-row">
+            <input type="number" id="lts-birth-year" placeholder="年" min="1" max="200">
+            <span>年</span>
+            <input type="number" id="lts-birth-month" placeholder="月" min="1" max="12">
+            <span>月</span>
+            <input type="number" id="lts-birth-day" placeholder="日" min="1" max="31">
+            <span>日</span>
+          </div>
+          <div class="age-hint" id="lts-age-hint" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">保單設定</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>繳費年期</label>
+            <select id="lts-payment-term">
+              <option value="30">30 年</option>
+              <option value="20">20 年</option>
+              <option value="10">10 年</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>繳別</label>
+            <select id="lts-payment-freq">
+              <option value="年繳">年繳</option>
+              <option value="半年繳">半年繳</option>
+              <option value="季繳">季繳</option>
+              <option value="月繳">月繳</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-note">投保年齡：10年期 15~65歲；20年期 15~60歲；30年期 15~50歲</div>
+        <div class="field" style="margin-top:14px;">
+          <label>保額（萬元）</label>
+          <input type="number" id="lts-face-amount" value="2" min="0" step="0.1">
+        </div>
+        <div class="field-note">保額範圍：0.5 ~ 5 萬（實際上限依投保年齡可能調整，61歲以上上限降為 3 萬）</div>
+      </div>
+
+      <details class="advanced">
+        <summary>進階選項（繳費方式／保費折扣）</summary>
+        <div class="form-grid">
+          <div class="field">
+            <label>首期繳費方式</label>
+            <select id="lts-first-payment-method">
+              <option value="金融機構轉帳">金融機構轉帳</option>
+              <option value="一般信用卡">一般信用卡</option>
+              <option value="富邦信用卡">富邦信用卡</option>
+              <option value="匯款">匯款</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>續期繳費方式</label>
+            <select id="lts-renewal-payment-method">
+              <option value="金融機構轉帳">金融機構轉帳</option>
+              <option value="一般信用卡">一般信用卡</option>
+              <option value="富邦信用卡">富邦信用卡</option>
+              <option value="自行繳費">自行繳費</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>專案保費折扣</label>
+            <select id="lts-discount">
+              <option value="無">無</option>
+              <option value="員工轉帳件">員工轉帳件</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <button class="submit-btn" id="lts-submit-btn">開始試算</button>
+      <div class="calc-error" id="lts-error"></div>
+      <div class="calc-loading" id="lts-loading">試算中，正在重新計算官方 Excel 建議書，請稍候...</div>
+
+      <div class="result-box" id="lts-result-box">
+        <div class="summary-grid" id="lts-summary-grid"></div>
+        <div class="table-wrap"><table class="result-table" id="lts-result-table"></table></div>
+        <button class="download-pdf-btn" id="lts-download-btn" style="display:none;">📄 下載 PDF 建議書</button>
+      </div>
+    `;
+  }
+
+  function initLTSAgeHint() {
+    const yearEl = document.getElementById('lts-birth-year');
+    const monthEl = document.getElementById('lts-birth-month');
+    const dayEl = document.getElementById('lts-birth-day');
+    const hintEl = document.getElementById('lts-age-hint');
+    if (!yearEl || !monthEl || !dayEl || !hintEl) return;
+
+    function update() {
+      const y = yearEl.value, m = monthEl.value, d = dayEl.value;
+      if (!y || !m || !d) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      const result = calcInsuranceAndActualAge(y, m, d, new Date());
+      if (!result) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      hintEl.textContent = `保險年齡 ${result.insuranceAge} 歲　實際年齡 ${result.actualAge} 歲`;
+      hintEl.style.display = 'block';
+    }
+
+    [yearEl, monthEl, dayEl].forEach(el => el.addEventListener('input', update));
+  }
+
+  const LTS_TABLE_COLUMNS = [
+    { key: 'policy_year', label: '保單年度' },
+    { key: 'age', label: '保險年齡' },
+    { key: 'annual_premium', label: '年度保費' },
+    { key: 'cum_premium', label: '累計保費' },
+    { key: 'death_benefit', label: '身故保障' },
+    { key: 'cash_value', label: '年度末解約金' },
+    { key: 'reduced_paid_up', label: '減額繳清保額' },
+  ];
+
+  async function submitLTSCalc(product) {
+    const errorEl = document.getElementById('lts-error');
+    const loadingEl = document.getElementById('lts-loading');
+    const resultBox = document.getElementById('lts-result-box');
+    const btn = document.getElementById('lts-submit-btn');
+    errorEl.style.display = 'none';
+    resultBox.style.display = 'none';
+
+    const birthYear = document.getElementById('lts-birth-year').value;
+    const birthMonth = document.getElementById('lts-birth-month').value;
+    const birthDay = document.getElementById('lts-birth-day').value;
+    if (!birthYear || !birthMonth || !birthDay) {
+      errorEl.textContent = '請填寫完整的生日（民國年／月／日）';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    const payload = {
+      name: document.getElementById('lts-name').value || '客戶',
+      gender: document.getElementById('lts-gender').value,
+      birth_year: Number(birthYear),
+      birth_month: Number(birthMonth),
+      birth_day: Number(birthDay),
+      payment_term: Number(document.getElementById('lts-payment-term').value),
+      payment_freq: document.getElementById('lts-payment-freq').value,
+      face_amount_wan: Number(document.getElementById('lts-face-amount').value),
+      first_payment_method: document.getElementById('lts-first-payment-method').value,
+      renewal_payment_method: document.getElementById('lts-renewal-payment-method').value,
+      discount: document.getElementById('lts-discount').value,
+      want_pdf: true,
+    };
+
+    btn.disabled = true;
+    loadingEl.style.display = 'block';
+
+    try {
+      const resp = await fetch(`${LTS_API_BASE}/api/${product.apiProduct}/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || '試算失敗，請確認輸入內容');
+      }
+      renderLTSResults(data);
+    } catch (err) {
+      errorEl.textContent = '試算失敗：' + err.message + '（若持續發生，可能是後端服務剛啟動需要暖機，請稍後再試一次）';
+      errorEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  function renderLTSResults(data) {
+    const summaryEl = document.getElementById('lts-summary-grid');
+    const p = data.premiums || {};
+    summaryEl.innerHTML = `
+      <div class="summary-tile"><div class="label">保額（萬元）</div><div class="value">${fmtNum(p.final_face_amount_wan)}</div></div>
+      <div class="summary-tile"><div class="label">年繳保費</div><div class="value">${fmtNum(p.annual_premium_gross)}</div></div>
+      <div class="summary-tile"><div class="label">首年實繳保費</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
+      <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${fmtNum(p.renewal_year_premium)}</div></div>
+    `;
+
+    const tableEl = document.getElementById('lts-result-table');
+    const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
+    const head = '<tr>' + LTS_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+    const body = rows.map(row =>
+      '<tr>' + LTS_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? Math.round(row[c.key] ?? 0) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+    ).join('');
+    tableEl.innerHTML = head + body;
+
+    const downloadBtn = document.getElementById('lts-download-btn');
+    if (data.pdf_base64) {
+      downloadBtn.style.display = 'block';
+      downloadBtn.onclick = () => downloadPdfBlob(data.pdf_base64, '建議書.pdf');
+    } else {
+      downloadBtn.style.display = 'none';
+    }
+
+    document.getElementById('lts-result-box').style.display = 'block';
   }
 
   // ---------- 建立首頁模組卡片 ----------
