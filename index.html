@@ -180,6 +180,15 @@
   .pfa-single-row .value { margin-top: 8px; font-size: 26px; font-weight: 800; color: #1e3a8a; white-space: nowrap; }
   .pfa-single-row .value small { font-size: 14px; font-weight: 700; color: #3a4a6b; }
   .pfa-single-row .note { margin-top: 6px; font-size: 12px; color: #6b7a96; }
+  .pfa-currency-btn {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px;
+    border: 1.5px solid #c7d6f3; background: #eef3fc; color: #1e3a8a; font-size: 13.5px; font-weight: 800;
+    font-family: inherit; cursor: pointer; transition: all .15s;
+  }
+  .pfa-currency-btn small { font-size: 11.5px; font-weight: 600; color: #5b6b8a; }
+  .pfa-currency-btn:hover { border-color: #1e3a8a; }
+  .pfa-currency-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+  #pfa-result-table th small { font-size: 11px; font-weight: 600; color: #8a93a3; }
   .summary-tile { background: #f9fafc; border-radius: 12px; padding: 12px 14px; }
   .summary-tile .label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
   .summary-tile .value { font-size: 17px; font-weight: 700; color: #1d1d1f; }
@@ -1225,6 +1234,15 @@
       const t = data.tables[key];
       return `<button class="scenario-tab ${i === 0 ? 'active' : ''}" data-key="${key}">${t ? t.label : key}</button>`;
     }).join('');
+    if (pfaLastCalc.rate > 0) {
+      tabsEl.insertAdjacentHTML('beforeend', '<button class="pfa-currency-btn" id="pfa-currency-btn"></button>');
+      document.getElementById('pfa-currency-btn').addEventListener('click', () => {
+        pfaTableCurrency = pfaTableCurrency === 'TWD' ? 'USD' : 'TWD';
+        renderPFATable(pfaCurrentTable);
+      });
+    } else {
+      pfaTableCurrency = 'USD';
+    }
     tabsEl.querySelectorAll('.scenario-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         tabsEl.querySelectorAll('.scenario-tab').forEach(t => t.classList.remove('active'));
@@ -1245,17 +1263,34 @@
     document.getElementById('pfa-result-box').style.display = 'block';
   }
 
+  // 試算表顯示幣別：'USD'（官方建議書原始數字）或 'TWD'（依試算當下匯率換算，四捨五入到元）
+  let pfaTableCurrency = 'USD';
+  let pfaCurrentTable = null;
+
   function renderPFATable(tableData) {
+    pfaCurrentTable = tableData;
     const tableEl = document.getElementById('pfa-result-table');
     if (!tableData || !tableData.rows || !tableData.rows.length) {
       tableEl.innerHTML = '<tr><td>無資料</td></tr>';
       return;
     }
-    const head = '<tr>' + PFA_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+    const twd = pfaTableCurrency === 'TWD' && pfaLastCalc.rate > 0;
+    const unit = twd ? '（台幣）' : '（美元）';
+    const money = v => (v === null || v === undefined || v === '') ? '—'
+      : Math.round(twd ? v * pfaLastCalc.rate : v).toLocaleString('zh-TW');
+    const head = '<tr>' + PFA_TABLE_COLUMNS.map(c =>
+      `<th>${c.label}${c.key === 'policy_year' || c.key === 'age' ? '' : `<br><small>${unit}</small>`}</th>`).join('') + '</tr>';
     const body = tableData.rows.map(row =>
-      '<tr>' + PFA_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + PFA_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : money(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
+    const btn = document.getElementById('pfa-currency-btn');
+    if (btn) {
+      btn.classList.toggle('active', twd);
+      btn.innerHTML = twd
+        ? `顯示美元`
+        : `換算新台幣<small>${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}</small>`;
+    }
   }
 
   function downloadPFAPdf(base64) {
