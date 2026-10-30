@@ -386,7 +386,7 @@
 
     <!-- 男女防癌險：商品試算工作台 -->
     <div class="view" id="view-cancer">
-      <button class="back-link" onclick="showModule(currentModuleIndex)">← 返回上一頁</button>
+      <button class="back-link" onclick="showHome()">← 返回首頁</button>
       <div id="cancer-studio"></div>
     </div>
 
@@ -545,6 +545,13 @@
   function showModule(index) {
     currentModuleIndex = index;
     const mod = MODULES[index];
+    // 男女防癌險：不顯示商品列表，直接進入分頁式試算工作台
+    // （回到這個分類時，停在上次看的商品）
+    if (mod.products.length && mod.products.every(p => p.calcType === 'CANCER')) {
+      const keep = cs.moduleIndex === index && cs.productIndex !== null;
+      showCancerStudio(index, keep ? cs.productIndex : 0);
+      return;
+    }
     document.getElementById('module-title').textContent = mod.name;
     document.getElementById('module-subtitle').textContent = `共 ${mod.products.length} 項商品`;
     const listEl = document.getElementById('product-list');
