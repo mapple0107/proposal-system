@@ -202,7 +202,7 @@
 
   /* ---------- 男女防癌險：商品試算工作台（CLZ / CLX / CIA / CIB） ---------- */
   #view-cancer .back-link { margin-bottom: 18px; color: var(--cs-accent); }
-  /* 配色：預設藍色；女性商品（CLX / CIB）於 #view-cancer 加上 .cs-female 改為粉紅色 */
+  /* 配色：預設藍色；女性商品（CLX / CIB）於 #view-cancer 加上 .cs-female 改為珊瑚蜜桃色 */
   #view-cancer {
     --cs-accent: #2554e0;
     --cs-deep: #1e3a8a;
@@ -220,20 +220,20 @@
     --cs-shadow-rgb: 30,58,138;
   }
   #view-cancer.cs-female {
-    --cs-accent: #e0457b;
-    --cs-deep: #a3164f;
-    --cs-tint: #fdeef4;
-    --cs-tint-bd: #f7d3e2;
-    --cs-track: #fad5e3;
-    --cs-hover-bd: #f0b2cb;
-    --cs-input: #fdf5f8;
-    --cs-input-bd: #f3dde6;
-    --cs-tab-hover: #fdf2f6;
-    --cs-check: #fdf8fa;
-    --cs-line: #f0d0dd;
-    --cs-accent-rgb: 224,69,123;
-    --cs-glow-rgb: 190,24,93;
-    --cs-shadow-rgb: 157,25,80;
+    --cs-accent: #ee7b6b;
+    --cs-deep: #c04a3c;
+    --cs-tint: #fef3f0;
+    --cs-tint-bd: #fbd9d1;
+    --cs-track: #fcdcd5;
+    --cs-hover-bd: #f6b8ab;
+    --cs-input: #fff8f6;
+    --cs-input-bd: #f6e1dc;
+    --cs-tab-hover: #fff4f1;
+    --cs-check: #fffaf8;
+    --cs-line: #f3d5cd;
+    --cs-accent-rgb: 238,123,107;
+    --cs-glow-rgb: 192,74,60;
+    --cs-shadow-rgb: 140,60,45;
   }
   .cs-tabs {
     display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px;
@@ -254,7 +254,7 @@
   .cs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
   .cs-code { font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 800; font-size: 58px; line-height: 1; color: var(--cs-deep); letter-spacing: -0.01em; }
   .cs-desc { margin-top: 12px; font-size: 13.5px; color: #7b8494; }
-  .cs-pill { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: var(--cs-deep); background: var(--cs-tint); border: 1px solid var(--cs-tint-bd); padding: 8px 16px; border-radius: 999px; }
+  .cs-pill { flex-shrink: 0; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; color: var(--cs-deep); background: var(--cs-tint); border: 1.5px solid var(--cs-tint-bd); padding: 12px 26px; border-radius: 999px; }
 
   .cs-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; align-items: start; }
   .cs-card { background: #fff; border-radius: 24px; padding: 28px 26px; box-shadow: 0 10px 30px rgba(var(--cs-shadow-rgb),0.06); }
@@ -379,6 +379,7 @@
     .cs-term .r { font-size: 11.5px; white-space: nowrap; }
     .cs-face-num input { width: 104px; font-size: 38px; }
     .cs-head { flex-direction: column-reverse; }
+    .cs-pill { align-self: flex-start; font-size: 15px; padding: 9px 20px; }
   }
 </style>
 </head>
