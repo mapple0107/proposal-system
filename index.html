@@ -835,6 +835,17 @@
     formEl.innerHTML = renderPFAFormHTML(p, { skipInsured: true });
     initRadioGroups(formEl);
     document.getElementById('pfa-submit-btn').addEventListener('click', () => submitPFACalc(p));
+    document.getElementById('pfa-usd-rate').addEventListener('input', e => {
+      const v = Number(e.target.value);
+      if (v > 0) pfaRate.value = v;   // 手動修改的匯率在切換商品時沿用
+      pfaUpdateConversion();
+    });
+    ['pfa-annual-twd', 'pfa-total-twd'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', pfaUpdateConversion);
+    });
+    pfaUpdateConversion();
+    pfaLoadRate();
     dvUpdateAge();
   }
 
@@ -851,6 +862,63 @@
     const over = max && r.insuranceAge > max;
     el.textContent = `保險年齡 ${r.insuranceAge} 歲　實際年齡 ${r.actualAge} 歲` + (over ? `　（超過 ${p.code} 投保年齡上限 ${max} 歲）` : '');
     el.className = over ? 'cs-age warn' : 'cs-age';
+  }
+
+  // ---- 保額型分紅：台幣保費換算與美元匯率 ----
+  // 匯率預設取 open.er-api.com 的即時中間價，可手動修改；切換商品分頁時沿用同一個匯率。
+  const pfaRate = { value: null, info: '載入即時匯率中…', loaded: false };
+  let pfaLastCalc = { rate: null, term: null };
+
+  function pfaIsSingle(product) { return (product.freqOptions || [])[0] === '躉繳'; }
+
+  // 依試算依據換算成美元年繳保費（元，取整數）
+  function pfaAnnualUsd(product, mode, rate) {
+    const annualTwdWan = mode === 'total_twd'
+      ? Number(document.getElementById('pfa-total-twd').value) / product.paymentTerm
+      : Number(document.getElementById('pfa-annual-twd').value);
+    return Math.round(annualTwdWan * 10000 / rate);
+  }
+
+  function pfaUpdateConversion() {
+    const p = dv.moduleIndex !== null ? MODULES[dv.moduleIndex].products[dv.productIndex] : null;
+    const rateEl = document.getElementById('pfa-usd-rate');
+    if (!p || !rateEl) return;
+    const rate = Number(rateEl.value);
+    const usd = v => `US$ ${Math.round(v).toLocaleString('en-US')}`;
+    const a = document.getElementById('pfa-conv-annual');
+    const t = document.getElementById('pfa-conv-total');
+    if (!(rate > 0)) {
+      if (a) a.textContent = '請先輸入美元匯率';
+      if (t) t.textContent = '請先輸入美元匯率';
+      return;
+    }
+    const unit = pfaIsSingle(p) ? '（一次繳清）' : '／年';
+    if (a) a.textContent = `≈ ${usd(pfaAnnualUsd(p, 'annual_twd', rate))}${unit}（匯率 ${rate}）`;
+    if (t) {
+      const per = Number(document.getElementById('pfa-total-twd').value) / p.paymentTerm;
+      t.textContent = `÷ ${p.paymentTerm} 年 = 年繳 ${Math.round(per * 100) / 100} 萬台幣 ≈ ${usd(pfaAnnualUsd(p, 'total_twd', rate))}／年`;
+    }
+  }
+
+  async function pfaLoadRate() {
+    if (pfaRate.loaded) return;
+    try {
+      const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
+      const d = await r.json();
+      const twd = d && d.rates && d.rates.TWD;
+      if (!twd) throw new Error('no rate');
+      const dt = new Date((d.time_last_update_unix || Date.now() / 1000) * 1000);
+      pfaRate.value = Math.round(twd * 1000) / 1000;
+      pfaRate.info = `${dt.getMonth() + 1}/${dt.getDate()} 即時匯率（市場中間價，可自行修改為銀行匯率）`;
+      pfaRate.loaded = true;
+      const el = document.getElementById('pfa-usd-rate');
+      if (el && !el.value) el.value = pfaRate.value;
+    } catch (e) {
+      pfaRate.info = '無法取得即時匯率，請手動輸入';
+    }
+    const info = document.getElementById('pfa-rate-info');
+    if (info) info.textContent = pfaRate.info;
+    pfaUpdateConversion();
   }
 
   // opts.skipInsured：保額型分紅工作台已在上方共用「客戶基本資料」，表單只渲染保單設定以下
@@ -904,19 +972,26 @@
         <div class="field" style="margin-top:14px;">
           <label>試算依據</label>
           <div class="radio-group" data-target="pfa-input-mode">
-            <div class="radio-pill active" data-value="face_amount">用保額試算</div>
-            <div class="radio-pill" data-value="premium">用保費試算</div>
+            <div class="radio-pill active" data-value="annual_twd">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</div>
+            ${pfaIsSingle(product) ? '' : '<div class="radio-pill" data-value="total_twd">總繳保費</div>'}
+            <div class="radio-pill" data-value="face_amount">保額</div>
           </div>
-          <input type="hidden" id="pfa-input-mode" value="face_amount">
+          <input type="hidden" id="pfa-input-mode" value="annual_twd">
         </div>
         <div class="form-grid" style="margin-top:14px;">
-          <div class="field" id="pfa-face-amount-field">
-            <label>保額（萬元）</label>
-            <input type="number" id="pfa-face-amount" value="${product.faceDefault ?? 30}" min="0" step="0.1">
+          <div class="field pfa-mode-field" data-mode="annual_twd">
+            <label>${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}（萬元・台幣，未折扣前）</label>
+            <input type="number" id="pfa-annual-twd" value="30" min="0" step="0.1">
+            <div class="field-note" id="pfa-conv-annual"></div>
           </div>
-          <div class="field" id="pfa-premium-field" style="display:none;">
-            <label>希望${(product.freqOptions || [])[0] === '躉繳' ? '躉繳' : '年繳'}保費（元，未折扣前）</label>
-            <input type="number" id="pfa-premium" value="100000" min="0" step="1000">
+          <div class="field pfa-mode-field" data-mode="total_twd" style="display:none;">
+            <label>總繳保費（萬元・台幣，未折扣前）</label>
+            <input type="number" id="pfa-total-twd" value="${30 * product.paymentTerm}" min="0" step="0.1">
+            <div class="field-note" id="pfa-conv-total"></div>
+          </div>
+          <div class="field pfa-mode-field" data-mode="face_amount" style="display:none;">
+            <label>保額（萬元・美元）</label>
+            <input type="number" id="pfa-face-amount" value="${product.faceDefault ?? 30}" min="0" step="0.1">
           </div>
           <div class="field" ${product.hasScenario === false ? 'style="display:none;"' : ''}>
             <label>建議書標示紅利等級</label>
@@ -925,6 +1000,17 @@
               <option value="高分紅">高分紅</option>
               <option value="低分紅">低分紅（較低紅利）</option>
             </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">美元匯率</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>1 美元兌新台幣</label>
+            <input type="number" id="pfa-usd-rate" value="${pfaRate.value ?? ''}" min="0" step="0.001" placeholder="載入中…">
+            <div class="field-note" id="pfa-rate-info">${pfaRate.info}</div>
           </div>
         </div>
       </div>
@@ -985,9 +1071,10 @@
           pill.classList.add('active');
           targetInput.value = pill.dataset.value;
           if (group.dataset.target === 'pfa-input-mode') {
-            const isFace = pill.dataset.value === 'face_amount';
-            document.getElementById('pfa-face-amount-field').style.display = isFace ? '' : 'none';
-            document.getElementById('pfa-premium-field').style.display = isFace ? 'none' : '';
+            document.querySelectorAll('.pfa-mode-field').forEach(f => {
+              f.style.display = f.dataset.mode === pill.dataset.value ? '' : 'none';
+            });
+            pfaUpdateConversion();
           }
         });
       });
@@ -1030,11 +1117,26 @@
       installment_period: Number(document.getElementById('pfa-installment-period').value),
       want_pdf: true,
     };
+    const rate = Number(document.getElementById('pfa-usd-rate').value);
     if (inputMode === 'face_amount') {
       payload.face_amount_wan = Number(document.getElementById('pfa-face-amount').value);
     } else {
-      payload.premium_amount = Number(document.getElementById('pfa-premium').value);
+      // 台幣保費 → 美元年繳保費（官方 Excel 的保費換算保額一律以年繳保費計算，與繳別無關）
+      if (!(rate > 0)) {
+        errorEl.textContent = '請輸入美元匯率';
+        errorEl.style.display = 'block';
+        return;
+      }
+      const annualUsd = pfaAnnualUsd(product, inputMode, rate);
+      if (!(annualUsd > 0)) {
+        errorEl.textContent = '請輸入保費金額';
+        errorEl.style.display = 'block';
+        return;
+      }
+      payload.input_mode = 'premium';
+      payload.premium_amount = annualUsd;
     }
+    pfaLastCalc = { rate: rate > 0 ? rate : null, term: product.paymentTerm };
 
     btn.disabled = true;
     loadingEl.style.display = 'block';
@@ -1081,10 +1183,20 @@
     const summaryEl = document.getElementById('pfa-summary-grid');
     const p = data.premiums || {};
     summaryEl.innerHTML = `
-      <div class="summary-tile"><div class="label">最終保額（萬元）</div><div class="value">${fmtNum(p.final_face_amount_wan)}</div></div>
-      <div class="summary-tile"><div class="label">首期實繳保費</div><div class="value">${fmtNum(p.first_period_premium)}</div></div>
-      <div class="summary-tile"><div class="label">首年實繳保費</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
-      <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${p.payment_freq === '躉繳' ? '無（躉繳）' : fmtNum(p.renewal_year_premium)}</div></div>
+      <div class="summary-tile"><div class="label">保額（萬美元）</div><div class="value">${Number(p.final_face_amount_wan).toLocaleString('en-US', { maximumFractionDigits: 1 })}</div></div>
+      <div class="summary-tile"><div class="label">首期實繳保費（美元）</div><div class="value">${fmtNum(p.first_period_premium)}</div></div>
+      <div class="summary-tile"><div class="label">首年實繳保費（美元）</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
+      <div class="summary-tile"><div class="label">續年實繳保費（美元）</div><div class="value">${p.payment_freq === '躉繳' ? '無（躉繳）' : fmtNum(p.renewal_year_premium)}</div></div>
+      ${pfaLastCalc.rate ? (() => {
+        const term = p.payment_term || pfaLastCalc.term;
+        const totalUsd = p.payment_freq === '躉繳' ? p.first_year_premium : p.first_year_premium + p.renewal_year_premium * (term - 1);
+        const twdWan = v => (Math.round(v * pfaLastCalc.rate / 100) / 100).toLocaleString('zh-TW');
+        if (p.payment_freq === '躉繳') {
+          return `<div class="summary-tile"><div class="label">躉繳實繳保費（折合台幣，匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>`;
+        }
+        return `<div class="summary-tile"><div class="label">首年實繳（折合台幣，匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
+      <div class="summary-tile"><div class="label">${term} 年總繳實繳（折合台幣）</div><div class="value">${twdWan(totalUsd)} 萬</div></div>`;
+      })() : ''}
     `;
 
     const tabsEl = document.getElementById('pfa-scenario-tabs');
