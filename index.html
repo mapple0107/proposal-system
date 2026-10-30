@@ -173,6 +173,13 @@
   .result-box { margin-top: 1.8rem; padding-top: 1.6rem; border-top: 1px solid #eee; display: none; }
   .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.4rem; }
   @media (max-width: 560px) { .summary-grid { grid-template-columns: 1fr; } }
+  .pfa-single-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .pfa-single-row .cell { text-align: center; padding: 18px 12px; border-radius: 16px; background: #eef3fc; border: 1px solid #d9e3f7; }
+  .pfa-single-row .cell.twd { background: #e3ecfb; border-color: #c7d6f3; }
+  .pfa-single-row .label { font-size: 13px; font-weight: 700; color: #5b6b8a; letter-spacing: 0.04em; }
+  .pfa-single-row .value { margin-top: 8px; font-size: 26px; font-weight: 800; color: #1e3a8a; white-space: nowrap; }
+  .pfa-single-row .value small { font-size: 14px; font-weight: 700; color: #3a4a6b; }
+  .pfa-single-row .note { margin-top: 6px; font-size: 12px; color: #6b7a96; }
   .summary-tile { background: #f9fafc; border-radius: 12px; padding: 12px 14px; }
   .summary-tile .label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
   .summary-tile .value { font-size: 17px; font-weight: 700; color: #1d1d1f; }
@@ -1192,11 +1199,13 @@
     const rateLabel = pfaLastCalc.rate ? `${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}` : '';
     const twdWan = v => (Math.round(v * pfaLastCalc.rate / 100) / 100).toLocaleString('zh-TW');
     if (p.payment_freq === '躉繳') {
-      // 躉繳商品：只顯示保額、實繳保費（美元）、台幣實繳保費
+      // 躉繳商品：保額、實繳保費（美元）、台幣實繳保費 並排成一列，置中顯示
       summaryEl.innerHTML = `
-      ${faceTile}
-      <div class="summary-tile"><div class="label">實繳保費（美元）</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
-      ${pfaLastCalc.rate ? `<div class="summary-tile"><div class="label">台幣實繳保費（${rateLabel}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>` : ''}
+      <div class="pfa-single-row">
+        <div class="cell"><div class="label">保額</div><div class="value">${Number(p.final_face_amount_wan).toLocaleString('en-US', { maximumFractionDigits: 1 })}<small> 萬美元</small></div></div>
+        <div class="cell"><div class="label">實繳保費</div><div class="value"><small>US$ </small>${fmtNum(p.first_year_premium)}</div></div>
+        ${pfaLastCalc.rate ? `<div class="cell twd"><div class="label">台幣實繳保費</div><div class="value">${twdWan(p.first_year_premium)}<small> 萬</small></div><div class="note">${rateLabel}</div></div>` : ''}
+      </div>
     `;
     } else {
       const term = p.payment_term || pfaLastCalc.term;
