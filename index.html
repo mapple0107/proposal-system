@@ -410,6 +410,7 @@
   .cs-bf .t { font-size: 16px; font-weight: 800; color: #1d2433; }
   .cs-bf .d { margin-top: 6px; font-size: 13.5px; line-height: 1.65; color: #5b6475; }
   .cs-bf .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .cs-bf .chips b { font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 800; margin-right: 2px; }
   .cs-bf .chips span { padding: 4px 10px; border-radius: 8px; background: var(--cs-tint); border: 1px solid var(--cs-tint-bd); color: var(--cs-deep); font-size: 12px; font-weight: 700; }
   .cs-bf details.lst { margin-top: 10px; }
   .cs-bf details.lst summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--cs-accent); }
@@ -517,8 +518,8 @@
   // 並在 view-product 對應的地方加上實際的試算輸入欄位與 PDF 產出邏輯。
   // ============================================================
   // 防癌險特定癌症（重度）／特定手術項目：依富邦官方商品說明（CLZ/CIA 男性、CLX/CIB 女性清單相同）
-  const MALE_SPECIFIC_CANCERS = ["C18 結腸", "C19 直腸乙狀結腸連接處", "C20 直腸", "C21 肛門及肛管", "C60 陰莖", "C61 攝護腺", "C62 睪丸", "C63 其他男性生殖器官", "C67 膀胱"];
-  const FEMALE_SPECIFIC_CANCERS = ["C43 皮膚黑色素瘤", "C44 其他皮膚", "C50 乳房", "C51 外陰", "C52 陰道", "C53 子宮頸", "C54 子宮體", "C55 未明示部位子宮", "C56 卵巢", "C57 其他女性生殖器官", "C58 胎盤"];
+  const MALE_SPECIFIC_CANCERS = ["C18 結腸惡性腫瘤", "C19 直腸乙狀結腸連接處惡性腫瘤", "C20 直腸惡性腫瘤", "C21 肛門及肛(門)管惡性腫瘤", "C60 陰莖惡性腫瘤", "C61 攝護腺惡性腫瘤", "C62 睪丸之惡性腫瘤", "C63 其他及未明示男性生殖器官之惡性腫瘤", "C67 膀胱惡性腫瘤"];
+  const FEMALE_SPECIFIC_CANCERS = ["C43 皮膚惡性黑色素瘤", "C44 皮膚之其他及未明示惡性腫瘤", "C50 乳房惡性腫瘤", "C51 外陰惡性腫瘤", "C52 陰道惡性腫瘤", "C53 子宮頸惡性腫瘤", "C54 子宮體惡性腫瘤", "C55 未明示部位子宮惡性腫瘤", "C56 卵巢惡性腫瘤", "C57 其他及未明示女性生殖器官之惡性腫瘤", "C58 胎盤惡性腫瘤"];
   const MALE_SPECIFIC_SURGERIES = ["被膜下前列腺切除術", "恥骨下前列腺切除術", "經尿道攝護腺切除術－切除之攝護腺重量 5 至 15 公克", "經尿道攝護腺切除術－切除之攝護腺重量 15 至 50 公克", "經尿道攝護腺切除術－切除之攝護腺重量大於 50 公克", "雙極前列腺刮除術／汽化術－切除之攝護腺重量 5 公克（含）以上", "經腹腔前列腺囊腫切除術", "經尿道前列腺切開術"];
   const FEMALE_SPECIFIC_SURGERIES = ["腹式或陰道式會陰尿道懸吊術", "腹式尿失禁手術", "陰道式尿失禁手術（含 Kelly plication）", "陰道懸吊術", "膀胱懸吊術", "KELLY 手術", "尿道人工擴約肌植入術", "（後）腹腔鏡膀胱頸懸吊術", "從腹腔進入陰道固定術", "從陰道進入之陰道固定術", "腹腔鏡陰道懸吊術", "經腹腔之骨盆底重建術", "陰道人工網膜外露修復術", "子宮懸吊術"];
 
@@ -1502,7 +1503,7 @@
             <div class="body">
               <div class="t">${b.title}</div>
               <div class="d">${b.desc}</div>
-              ${b.chips ? `<div class="chips">${b.chips.map(c => `<span>${c}</span>`).join('')}</div>` : ''}
+              ${b.chips ? `<div class="chips">${b.chips.map(c => `<span><b>${c.split(' ')[0]}</b> ${c.slice(c.indexOf(' ') + 1)}</span>`).join('')}</div>` : ''}
               ${b.chipsNote ? `<div class="cn">${b.chipsNote}</div>` : ''}
               ${b.list ? `<details class="lst"><summary>${b.listLabel}</summary><ol>${b.list.map(x => `<li>${x}</li>`).join('')}</ol></details>` : ''}
             </div>
