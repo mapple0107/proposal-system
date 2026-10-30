@@ -1188,22 +1188,28 @@
   function renderPFAResults(data) {
     const summaryEl = document.getElementById('pfa-summary-grid');
     const p = data.premiums || {};
-    summaryEl.innerHTML = `
-      <div class="summary-tile"><div class="label">保額（萬美元）</div><div class="value">${Number(p.final_face_amount_wan).toLocaleString('en-US', { maximumFractionDigits: 1 })}</div></div>
+    const faceTile = `<div class="summary-tile"><div class="label">保額（萬美元）</div><div class="value">${Number(p.final_face_amount_wan).toLocaleString('en-US', { maximumFractionDigits: 1 })}</div></div>`;
+    const rateLabel = pfaLastCalc.rate ? `${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}` : '';
+    const twdWan = v => (Math.round(v * pfaLastCalc.rate / 100) / 100).toLocaleString('zh-TW');
+    if (p.payment_freq === '躉繳') {
+      // 躉繳商品：只顯示保額、實繳保費（美元）、台幣實繳保費
+      summaryEl.innerHTML = `
+      ${faceTile}
+      <div class="summary-tile"><div class="label">實繳保費（美元）</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
+      ${pfaLastCalc.rate ? `<div class="summary-tile"><div class="label">台幣實繳保費（${rateLabel}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>` : ''}
+    `;
+    } else {
+      const term = p.payment_term || pfaLastCalc.term;
+      const totalUsd = p.first_year_premium + p.renewal_year_premium * (term - 1);
+      summaryEl.innerHTML = `
+      ${faceTile}
       <div class="summary-tile"><div class="label">首期實繳保費（美元）</div><div class="value">${fmtNum(p.first_period_premium)}</div></div>
       <div class="summary-tile"><div class="label">首年實繳保費（美元）</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
-      <div class="summary-tile"><div class="label">續年實繳保費（美元）</div><div class="value">${p.payment_freq === '躉繳' ? '無（躉繳）' : fmtNum(p.renewal_year_premium)}</div></div>
-      ${pfaLastCalc.rate ? (() => {
-        const term = p.payment_term || pfaLastCalc.term;
-        const totalUsd = p.payment_freq === '躉繳' ? p.first_year_premium : p.first_year_premium + p.renewal_year_premium * (term - 1);
-        const twdWan = v => (Math.round(v * pfaLastCalc.rate / 100) / 100).toLocaleString('zh-TW');
-        if (p.payment_freq === '躉繳') {
-          return `<div class="summary-tile"><div class="label">躉繳實繳保費（折合台幣，${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>`;
-        }
-        return `<div class="summary-tile"><div class="label">首年實繳（折合台幣，${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
-      <div class="summary-tile"><div class="label">${term} 年總繳實繳（折合台幣）</div><div class="value">${twdWan(totalUsd)} 萬</div></div>`;
-      })() : ''}
+      <div class="summary-tile"><div class="label">續年實繳保費（美元）</div><div class="value">${fmtNum(p.renewal_year_premium)}</div></div>
+      ${pfaLastCalc.rate ? `<div class="summary-tile"><div class="label">首年實繳（折合台幣，${rateLabel}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
+      <div class="summary-tile"><div class="label">${term} 年總繳實繳（折合台幣）</div><div class="value">${twdWan(totalUsd)} 萬</div></div>` : ''}
     `;
+    }
 
     const tabsEl = document.getElementById('pfa-scenario-tabs');
     tabsEl.innerHTML = PFA_SCENARIO_ORDER.map((key, i) => {
