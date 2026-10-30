@@ -866,8 +866,8 @@
 
   // ---- 保額型分紅：台幣保費換算與美元匯率 ----
   // 匯率預設取 open.er-api.com 的即時中間價，可手動修改；切換商品分頁時沿用同一個匯率。
-  const pfaRate = { value: null, info: '載入即時匯率中…', loaded: false };
-  let pfaLastCalc = { rate: null, term: null };
+  const pfaRate = { value: null, date: '', info: '載入即時匯率中…', loaded: false, failed: false };
+  let pfaLastCalc = { rate: null, term: null, date: '' };
 
   function pfaIsSingle(product) { return (product.freqOptions || [])[0] === '躉繳'; }
 
@@ -893,10 +893,11 @@
       return;
     }
     const unit = pfaIsSingle(p) ? '（一次繳清）' : '／年';
-    if (a) a.textContent = `≈ ${usd(pfaAnnualUsd(p, 'annual_twd', rate))}${unit}（匯率 ${rate}）`;
+    const rateLabel = `（${rate === pfaRate.value && pfaRate.date ? pfaRate.date + ' ' : ''}匯率 ${rate}）`;
+    if (a) a.textContent = `≈ ${usd(pfaAnnualUsd(p, 'annual_twd', rate))}${unit}${rateLabel}`;
     if (t) {
       const per = Number(document.getElementById('pfa-total-twd').value) / p.paymentTerm;
-      t.textContent = `÷ ${p.paymentTerm} 年 = 年繳 ${Math.round(per * 100) / 100} 萬台幣 ≈ ${usd(pfaAnnualUsd(p, 'total_twd', rate))}／年`;
+      t.textContent = `÷ ${p.paymentTerm} 年 = 年繳 ${Math.round(per * 100) / 100} 萬台幣 ≈ ${usd(pfaAnnualUsd(p, 'total_twd', rate))}／年${rateLabel}`;
     }
   }
 
@@ -908,13 +909,18 @@
       const twd = d && d.rates && d.rates.TWD;
       if (!twd) throw new Error('no rate');
       const dt = new Date((d.time_last_update_unix || Date.now() / 1000) * 1000);
-      pfaRate.value = Math.round(twd * 1000) / 1000;
-      pfaRate.info = `${dt.getMonth() + 1}/${dt.getDate()} 即時匯率（市場中間價，可自行修改為銀行匯率）`;
+      pfaRate.value = Math.round(twd * 100) / 100;   // 取到小數 2 位，換算與顯示一致
+      pfaRate.date = `${dt.getMonth() + 1}/${dt.getDate()}`;
+      pfaRate.info = `${pfaRate.date} 即時匯率`;
       pfaRate.loaded = true;
+      pfaRate.failed = false;
       const el = document.getElementById('pfa-usd-rate');
       if (el && !el.value) el.value = pfaRate.value;
     } catch (e) {
       pfaRate.info = '無法取得即時匯率，請手動輸入';
+      pfaRate.failed = true;
+      const sec = document.getElementById('pfa-rate-section');
+      if (sec) sec.style.display = '';
     }
     const info = document.getElementById('pfa-rate-info');
     if (info) info.textContent = pfaRate.info;
@@ -1004,7 +1010,7 @@
         </div>
       </div>
 
-      <div class="form-section">
+      <div class="form-section" id="pfa-rate-section" ${pfaRate.failed ? '' : 'style="display:none;"'}>
         <div class="form-section-title">美元匯率</div>
         <div class="form-grid">
           <div class="field">
@@ -1136,7 +1142,7 @@
       payload.input_mode = 'premium';
       payload.premium_amount = annualUsd;
     }
-    pfaLastCalc = { rate: rate > 0 ? rate : null, term: product.paymentTerm };
+    pfaLastCalc = { rate: rate > 0 ? rate : null, term: product.paymentTerm, date: rate === pfaRate.value ? pfaRate.date : '' };
 
     btn.disabled = true;
     loadingEl.style.display = 'block';
@@ -1192,9 +1198,9 @@
         const totalUsd = p.payment_freq === '躉繳' ? p.first_year_premium : p.first_year_premium + p.renewal_year_premium * (term - 1);
         const twdWan = v => (Math.round(v * pfaLastCalc.rate / 100) / 100).toLocaleString('zh-TW');
         if (p.payment_freq === '躉繳') {
-          return `<div class="summary-tile"><div class="label">躉繳實繳保費（折合台幣，匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>`;
+          return `<div class="summary-tile"><div class="label">躉繳實繳保費（折合台幣，${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>`;
         }
-        return `<div class="summary-tile"><div class="label">首年實繳（折合台幣，匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
+        return `<div class="summary-tile"><div class="label">首年實繳（折合台幣，${pfaLastCalc.date ? pfaLastCalc.date + ' ' : ''}匯率 ${pfaLastCalc.rate}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
       <div class="summary-tile"><div class="label">${term} 年總繳實繳（折合台幣）</div><div class="value">${twdWan(totalUsd)} 萬</div></div>`;
       })() : ''}
     `;
