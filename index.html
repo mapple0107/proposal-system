@@ -362,6 +362,61 @@
   .cs-table-card table.result-table th:nth-child(-n+2) { white-space: nowrap; min-width: 0; }
   .cs-table-card h4 { margin-bottom: 14px; font-size: 15px; font-weight: 800; color: #1d2433; }
 
+
+  /* ---- 試算結果（右側卡片 + 給付保障） ---- */
+  .cs-panel.result { position: static; min-height: 0; padding: 0; border: none; background: transparent; box-shadow: none; display: flex; flex-direction: column; gap: 18px; align-items: stretch; text-align: left; }
+  .cs-rcard { position: relative; overflow: hidden; background: #fff; border-radius: 24px; padding: 26px 24px; border: 1px solid var(--cs-tint); box-shadow: 0 10px 30px rgba(var(--cs-shadow-rgb),0.08); }
+  .cs-rcard-main::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, var(--cs-accent), var(--cs-deep)); }
+  .cs-r-who { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 14px; font-weight: 600; color: #3a4150; }
+  .cs-r-who .g { padding: 6px 12px; border-radius: 10px; border: 1px solid #e7ebf2; background: #fff; font-weight: 700; color: #2b3242; }
+  .cs-r-who b { font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 800; color: #1d2433; }
+  .cs-r-label { margin-top: 20px; font-size: 13.5px; font-weight: 700; color: #8a93a3; }
+  .cs-r-big { margin-top: 2px; font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 800; font-size: 56px; line-height: 1.05; letter-spacing: -0.02em; background: linear-gradient(90deg, var(--cs-deep), var(--cs-accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cs-r-big .cur { font-size: 28px; margin-right: 4px; vertical-align: 6px; }
+  .cs-r-net { margin-top: 4px; font-size: 12.5px; color: #8a93a3; }
+  .cs-r-pill { display: inline-block; margin-top: 12px; padding: 8px 16px; border-radius: 999px; background: var(--cs-tint); border: 1px solid var(--cs-tint-bd); color: var(--cs-deep); font-size: 13.5px; font-weight: 700; }
+  .cs-r-sub { margin: 22px 0 10px; font-size: 13px; font-weight: 700; color: #8a93a3; letter-spacing: 0.04em; }
+  .cs-freq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cs-freq-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 4px; border-radius: 14px; border: 1px solid var(--cs-tint-bd); background: var(--cs-check); cursor: pointer; font-family: inherit; transition: all .15s; }
+  .cs-freq-tile:hover { border-color: var(--cs-hover-bd); }
+  .cs-freq-tile .l { font-size: 12.5px; font-weight: 700; color: #8a93a3; }
+  .cs-freq-tile .v { font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 800; font-size: 17px; color: var(--cs-deep); }
+  .cs-freq-tile .u { font-size: 11px; color: #8a93a3; }
+  .cs-freq-tile.active { background: var(--cs-tint); border-color: var(--cs-hover-bd); box-shadow: inset 0 0 0 1px var(--cs-hover-bd); }
+  .cs-freq-tile.active .v { color: var(--cs-accent); }
+
+  .cs-r-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 15px; font-weight: 800; color: #1d2433; }
+  .cs-r-title .tag { padding: 4px 12px; border-radius: 999px; background: var(--cs-tint); color: var(--cs-accent); font-size: 13px; font-weight: 700; }
+  .cs-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .cs-stats div { padding: 12px 14px; border-radius: 14px; background: var(--cs-check); }
+  .cs-stats span { display: block; font-size: 12px; font-weight: 700; color: #8a93a3; }
+  .cs-stats b { display: block; margin-top: 6px; font-family: 'Montserrat', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #1d2433; }
+  .cs-sum { margin-top: 14px; padding: 8px 20px 14px; border-radius: 18px; background: var(--cs-input); }
+  .cs-sum .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid #eef1f6; font-size: 14.5px; }
+  .cs-sum .row span { font-weight: 600; color: #3a4150; }
+  .cs-sum .row b { font-family: 'Montserrat', -apple-system, sans-serif; font-weight: 700; color: #1d2433; white-space: nowrap; }
+  .cs-sum .row.total { border-bottom: none; border-top: 2px dashed var(--cs-tint-bd); margin-top: 4px; padding-top: 18px; }
+  .cs-sum .row.total span { font-weight: 800; color: #1d2433; }
+  .cs-sum .row.total b { font-size: 24px; font-weight: 800; color: var(--cs-deep); }
+  .cs-sum sup { font-size: 14px; }
+  .cs-foot { margin-top: 10px; font-size: 12px; line-height: 1.6; color: #9aa3b2; }
+
+  .cs-benefit-card { margin-top: 22px; display: none; }
+  .cs-benefits { display: flex; flex-direction: column; }
+  .cs-bf { display: grid; grid-template-columns: 34px 1fr auto; gap: 16px; align-items: center; padding: 20px 14px; border-bottom: 1px solid #eef1f6; }
+  .cs-bf:last-child { border-bottom: none; }
+  .cs-bf.hot { background: var(--cs-tint); border-radius: 18px; border-bottom-color: transparent; }
+  .cs-bf .n { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--cs-accent), var(--cs-deep)); }
+  .cs-bf .t { font-size: 16px; font-weight: 800; color: #1d2433; }
+  .cs-bf .d { margin-top: 6px; font-size: 13.5px; line-height: 1.65; color: #5b6475; }
+  .cs-bf .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .cs-bf .chips span { padding: 4px 10px; border-radius: 8px; background: var(--cs-tint); border: 1px solid var(--cs-tint-bd); color: var(--cs-deep); font-size: 12px; font-weight: 700; }
+  .cs-bf .cn { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--cs-accent); }
+  .cs-bf .amt { text-align: right; min-width: 120px; }
+  .cs-bf .a { font-family: 'Montserrat', -apple-system, sans-serif; font-size: 24px; font-weight: 800; color: var(--cs-deep); white-space: nowrap; }
+  .cs-bf .a small { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; font-weight: 800; }
+  .cs-bf .s { margin-top: 4px; font-size: 12px; color: #9aa3b2; }
+
   @media (max-width: 760px) {
     .cs-grid { grid-template-columns: 1fr; }
     .cs-panel { position: static; min-height: 0; padding: 30px 20px; }
@@ -379,6 +434,15 @@
     .cs-term .r { font-size: 11.5px; white-space: nowrap; }
     .cs-face-num input { width: 104px; font-size: 38px; }
     .cs-head { flex-direction: column-reverse; }
+    .cs-r-big { font-size: 46px; }
+    .cs-freq-tile .v { font-size: 15px; }
+    .cs-bf { grid-template-columns: 30px 1fr; padding: 18px 8px; }
+    .cs-bf .amt { grid-column: 2; text-align: left; }
+    .cs-bf { align-items: start; }
+    .cs-sum { padding: 6px 16px 12px; }
+    .cs-sum .row.total { flex-wrap: wrap; }
+    .cs-sum .row.total b { font-size: 21px; }
+    .cs-stats span { font-size: 11.5px; }
     .cs-pill { align-self: flex-start; font-size: 15px; padding: 9px 20px; }
   }
 </style>
@@ -523,18 +587,26 @@
         { code: "CLZ", status: "ready", calcType: "CANCER", apiProduct: "CLZ", fixedGender: "男", genderLabel: "（男性專屬）",
           shortName: "豪愛無憂", typeLabel: "男定期", fullName: "豪愛無憂 防癌定期健康保險", rateVersion: "1150429",
           terms: [{ term: 10, ageMin: 18, ageMax: 60 }, { term: 20, ageMin: 18, ageMax: 50 }],
+          endAge: 89, specificDiseases: "主動脈外科置換手術／嚴重肝硬化症",
           faceMin: 50, faceMax: 300, faceTicks: [50, 100, 150, 200, 250, 300] },
         { code: "CLX", status: "ready", calcType: "CANCER", apiProduct: "CLX", fixedGender: "女", genderLabel: "（女性專屬）",
           shortName: "真馨相守", typeLabel: "女定期", fullName: "真馨相守 防癌定期健康保險", rateVersion: "1150409",
           terms: [{ term: 10, ageMin: 18, ageMax: 60 }, { term: 20, ageMin: 18, ageMax: 50 }],
+          endAge: 89, specificDiseases: "嚴重全身性紅斑性狼瘡腎病變／嚴重類風濕性關節炎",
           faceMin: 50, faceMax: 300, faceTicks: [50, 100, 150, 200, 250, 300] },
         { code: "CIA", status: "ready", calcType: "CANCER", apiProduct: "CIA", fixedGender: "男", genderLabel: "（男性專屬・終身）",
           shortName: "豪愛守護", typeLabel: "男終身", fullName: "豪愛守護 防癌終身健康保險", rateVersion: "1151023",
           terms: [{ term: 10, ageMin: 0, ageMax: 65 }, { term: 20, ageMin: 0, ageMax: 55 }, { term: 30, ageMin: 0, ageMax: 45 }],
+          endAge: 95, specificDiseases: "嚴重頭部創傷／嚴重第三度燒燙傷",
+          specificSurgeries: "前列腺切除、經尿道攝護腺切除等 8 項攝護腺相關手術",
+          specificCancers: ["C18 結腸", "C19 直腸乙狀結腸連接處", "C20 直腸", "C21 肛門及肛管", "C60 陰莖", "C61 攝護腺", "C62 睪丸", "C63 其他男性生殖器官", "C67 膀胱"],
           faceMin: 50, faceMax: 500, faceTicks: [50, 100, 200, 300, 400, 500], tableLayout: 'CI' },
         { code: "CIB", status: "ready", calcType: "CANCER", apiProduct: "CIB", fixedGender: "女", genderLabel: "（女性專屬・終身）",
           shortName: "真馨守護", typeLabel: "女終身", fullName: "真馨守護 防癌終身健康保險", rateVersion: "1151023",
           terms: [{ term: 10, ageMin: 0, ageMax: 65 }, { term: 20, ageMin: 0, ageMax: 55 }, { term: 30, ageMin: 0, ageMax: 45 }],
+          endAge: 95, specificDiseases: "嚴重頭部創傷／嚴重第三度燒燙傷",
+          specificSurgeries: "尿失禁手術、陰道／膀胱／子宮懸吊等 14 項骨盆底相關手術",
+          specificCancers: ["C43 皮膚黑色素瘤", "C44 其他皮膚", "C50 乳房", "C51 外陰", "C52 陰道", "C53 子宮頸", "C54 子宮體", "C55 未明示部位子宮", "C56 卵巢", "C57 其他女性生殖器官", "C58 胎盤"],
           faceMin: 50, faceMax: 500, faceTicks: [50, 100, 200, 300, 400, 500], tableLayout: 'CI' },
       ]
     },
@@ -1009,6 +1081,7 @@
   // 切換分頁時保留已填的生日／保額／進階選項，方便比較商品。
   // ============================================================
   const CANCER_API_BASE = PFA_API_BASE;
+  const PAYMENT_FREQS = ['年繳', '半年繳', '季繳', '月繳'];
   const cs = {
     moduleIndex: null, productIndex: null,
     birthY: '', birthM: '', birthD: '', term: null, face: null,
@@ -1119,6 +1192,8 @@
 
         <div class="cs-panel" id="cs-panel"></div>
       </div>
+
+      <div class="cs-card cs-benefit-card" id="cs-benefit-card"></div>
 
       <div class="cs-card cs-table-card" id="cs-table-card">
         <h4>保單年度明細</h4>
@@ -1231,6 +1306,7 @@
     clearTimeout(cs.timer);
     document.getElementById('cs-est').textContent = '—';
     document.getElementById('cs-table-card').style.display = 'none';
+    document.getElementById('cs-benefit-card').style.display = 'none';
     const items = ['填寫出生年月日', '選擇繳費年期', '設定規劃保額'];
     const panel = document.getElementById('cs-panel');
     panel.className = 'cs-panel';
@@ -1258,7 +1334,7 @@
     try {
       const resp = await fetch(`${CANCER_API_BASE}/api/${product.apiProduct}/calculate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, want_pdf: false }),
+        body: JSON.stringify({ ...payload, want_pdf: false, include_freq_table: true }),
       });
       const data = await resp.json();
       if (seq !== cs.reqSeq) return;
@@ -1283,32 +1359,149 @@
     }
   }
 
+  // 金額（元）轉成「150 萬」這種顯示；不是整萬時保留小數（如 3.1 萬）
+  function csWan(yuan) {
+    const w = Math.round(yuan / 100) / 100;
+    return `${w.toLocaleString('zh-TW', { maximumFractionDigits: 2 })} 萬`;
+  }
+
+  // 依商品給付規則組出「給付保障」清單。
+  // 金額規則皆對照官方 Excel 投保利益表驗證：
+  //   癌症（初期／輕度）保額 10%、癌症（重度）保額 100%，第 1 年改為年繳保費 ×1.06；
+  //   特定癌症（重度）第 2～6 年起依序保額 10%～50%；特定傷病保額 10%；特定手術保額 2%；
+  //   滿期／祝壽保險金 = 年繳保費 × 繳費年期 × 1.06。
+  function csBenefits(p, face, annual, term, rows) {
+    const F = face * 10000;
+    const isCI = p.tableLayout === 'CI';
+    const r1 = rows[0] || {}, r2 = rows[1] || {};
+    // 首年：CIA/CIB 直接取年度明細首年金額；CLZ/CLX 依投保利益表公式 年繳保費 × 1.06
+    const clY1 = annual ? Math.round(annual * 1.06) : null;
+    const sevY1 = isCI ? r1.cancer_severe : clY1;
+    const earlyY1 = isCI ? r1.cancer_early : clY1;
+    const sevY2 = isCI && r2.cancer_severe ? r2.cancer_severe : F;
+    const earlyY2 = isCI && r2.cancer_early ? r2.cancer_early : F * 0.1;
+    const wait = isCI ? '等待期間（癌症 90 日）' : '等待期間（90 日）';
+    const list = [
+      { title: '首次罹患癌症（重度）保險金', hot: true,
+        desc: `${wait}屆滿後首次確診｜第2年起按保險金額給付；曾領初期／輕度保險金者扣除後給付｜給付一次為限`,
+        amount: `<small>第2年起</small> ${csWan(sevY2)}`, sub: sevY1 ? `首年為 ${fmtNum(sevY1)} 元` : '' },
+      { title: '首次罹患癌症（初期・輕度）保險金',
+        desc: `${wait}屆滿後首次確診｜給付一次為限；若已先或同時符合重度癌症則不另給付`,
+        amount: `<small>第2年起</small> ${csWan(earlyY2)}`, sub: `保額 10%${earlyY1 ? `；首年為 ${fmtNum(earlyY1)} 元` : ''}` },
+      { title: '首次罹患特定癌症（重度）保險金',
+        desc: '第2保單年度起，重度癌症且屬特定癌症｜第2至第6年起依序給付保額 10%、20%、30%、40%、50%｜給付一次為限',
+        chips: p.specificCancers || null,
+        chipsNote: p.specificCancers ? `${p.fixedGender}性專屬 ${p.specificCancers.length} 項` : '特定癌症項目詳保單條款附表',
+        amount: `${csWan(F * 0.1).replace(' 萬', '')}～${csWan(F * 0.5)}`, sub: '額外給付一次' },
+      { title: '特定傷病保險金',
+        desc: `${isCI ? '等待期間屆滿後' : '第2保單年度起'}經醫師診斷確定特定傷病之一（${p.specificDiseases}）｜給付一次為限`,
+        amount: csWan(F * 0.1), sub: '保額 10%' },
+      { title: '特定手術保險金',
+        desc: `契約有效期間內接受${p.specificSurgeries ? `特定手術（${p.specificSurgeries}）` : '保單條款附表所列特定手術'}｜給付一次為限`,
+        amount: csWan(F * 0.02), sub: '保額 2%' },
+      { title: isCI ? '所繳保費退還、身故（喪葬費用）保險金' : '身故（喪葬費用）保險金',
+        desc: `契約有效期間內身故，按當年度保險金額給付，扣除已領各項保險金${isCI ? '｜實際年齡滿15足歲前身故者，改為退還所繳保險費' : ''}`,
+        amount: '依身故年度', sub: '詳下方年度明細' },
+      { title: isCI ? '祝壽保險金' : '滿期保險金',
+        desc: `被保險人保險年齡屆滿 ${p.endAge} 歲仍生存，按當年度保險金額給付後契約終止`,
+        amount: annual ? `${fmtNum(annual * term * 1.06)} 元` : '—', sub: '年繳保費總和 ×1.06，扣除已領' },
+      { title: '豁免保險費',
+        desc: '繳費期間內確診重度癌症，或意外事故致 1～6 級失能',
+        amount: '豁免', sub: '診斷確定日後續期保費' },
+    ];
+    return list;
+  }
+
   function csPanelResult(product, payload, data) {
     const pr = data.premiums || {};
     const age = csAge();
+    const insAge = age && !age.invalid ? age.insuranceAge : null;
     const freq = payload.payment_freq;
+    const term = payload.payment_term;
+    const face = pr.final_face_amount_wan || payload.face_amount_wan;
+    const byFreq = pr.by_freq || null;
+    const annual = byFreq ? byFreq['年繳'].gross : (freq === '年繳' ? pr.annual_premium_gross : null);
+    const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
+    const isCI = product.tableLayout === 'CI';
     document.getElementById('cs-est').textContent = fmtNum(pr.annual_premium_gross);
     const discounted = pr.first_period_premium < pr.annual_premium_gross;
+    const rate = annual ? Math.round(annual / face * 100) / 100 : null;
+
+    const freqTiles = byFreq ? `
+      <div class="cs-r-sub">各繳費頻率對照</div>
+      <div class="cs-freq">
+        ${PAYMENT_FREQS.map(f => `
+          <button class="cs-freq-tile ${f === freq ? 'active' : ''}" data-freq="${f}">
+            <span class="l">${f}</span>
+            <span class="v">${fmtNum(byFreq[f].gross)}</span>
+            <span class="u">元 / ${f === '年繳' ? '年' : '期'}</span>
+          </button>`).join('')}
+      </div>` : '';
+
+    const benefits = csBenefits(product, face, annual, term, rows);
 
     const panel = document.getElementById('cs-panel');
     panel.className = 'cs-panel result';
     panel.innerHTML = `
-      <div class="cs-res-tag">${product.code}・${payload.payment_term} 年期・${fmtNum(pr.final_face_amount_wan)} 萬</div>
-      <div class="cs-res-label">${freq}應繳保費</div>
-      <div class="cs-res-big">${fmtNum(pr.annual_premium_gross)}<small>元</small></div>
-      <div class="cs-res-rows">
-        <div><span>每期實繳保費${discounted ? '（折扣後）' : ''}</span><b>${fmtNum(pr.first_period_premium)} 元</b></div>
-        <div><span>首年實繳保費</span><b>${fmtNum(pr.first_year_premium)} 元</b></div>
-        <div><span>續年實繳保費</span><b>${fmtNum(pr.renewal_year_premium)} 元</b></div>
-        <div><span>保險年齡</span><b>${age && !age.invalid ? age.insuranceAge : '—'} 歲</b></div>
+      <div class="cs-rcard cs-rcard-main">
+        <div class="cs-r-who">
+          <span class="g">${product.fixedGender === '男' ? '👨🏻' : '👩🏻'} ${product.fixedGender}性</span>
+          <span>保險年齡 <b>${insAge ?? '—'}</b> 歲 · 規劃 <b>${fmtNum(face)}</b> 萬元</span>
+        </div>
+        <div class="cs-r-label">${freq}保費</div>
+        <div class="cs-r-big"><span class="cur">$</span>${fmtNum(pr.annual_premium_gross)}</div>
+        ${discounted ? `<div class="cs-r-net">每期實繳 ${fmtNum(pr.first_period_premium)} 元（已扣保費折扣）</div>` : ''}
+        <div class="cs-r-pill">繳費 ${term} 年 · 保障至 ${product.endAge} 歲（${isCI ? '終身' : '定期'}）</div>
+        ${freqTiles}
+        <button class="cs-pdf-btn" id="cs-pdf-btn">📄 下載 PDF 建議書</button>
+        <div class="cs-pdf-err" id="cs-pdf-err"></div>
       </div>
-      ${discounted ? '<div class="cs-res-note">實繳保費已依所選繳費方式／專案扣除保費折扣。</div>' : ''}
-      <button class="cs-pdf-btn" id="cs-pdf-btn">📄 下載 PDF 建議書</button>
-      <div class="cs-pdf-err" id="cs-pdf-err"></div>`;
+
+      <div class="cs-rcard">
+        <div class="cs-r-title">保費明細 <span class="tag">${term} 年期</span></div>
+        <div class="cs-stats">
+          <div><span>費率（元／萬元保額）</span><b>${rate !== null ? rate.toLocaleString('zh-TW') : '—'}</b></div>
+          <div><span>投保年齡</span><b>${insAge ?? '—'} 歲</b></div>
+          <div><span>規劃保額</span><b>${fmtNum(face)} 萬</b></div>
+          <div><span>繳費年期</span><b>${term} 年期</b></div>
+        </div>
+        <div class="cs-sum">
+          <div class="row"><span>年繳保費</span><b>${annual ? fmtNum(annual) + ' 元' : '—'}</b></div>
+          ${byFreq && byFreq['年繳'].first < annual ? `<div class="row"><span>年繳實繳保費（折扣後）</span><b>${fmtNum(byFreq['年繳'].first)} 元</b></div>` : ''}
+          <div class="row"><span>預計繳費期滿保險年齡</span><b>${insAge !== null ? insAge + term : '—'} 歲</b></div>
+          <div class="row total"><span>預估總保費（年繳）</span><b>${annual ? fmtNum(annual * term) : '—'} 元<sup>*</sup></b></div>
+        </div>
+        <div class="cs-foot">* 以年繳應繳保費 × 繳費年期估算，未扣除保費折扣；實際以保單條款及核保結果為準。</div>
+      </div>
+    `;
+    panel.querySelectorAll('.cs-freq-tile').forEach(btn => btn.addEventListener('click', () => {
+      if (btn.dataset.freq === cs.freq) return;
+      cs.freq = btn.dataset.freq;
+      document.getElementById('cs-freq').value = cs.freq;
+      csRefresh();
+    }));
     document.getElementById('cs-pdf-btn').addEventListener('click', () => csDownloadPdf(product, payload));
 
-    const columns = product.tableLayout === 'CI' ? CI_TABLE_COLUMNS : CANCER_TABLE_COLUMNS;
-    const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
+    // 給付保障（全寬卡片）
+    document.getElementById('cs-benefit-card').innerHTML = `
+      <div class="cs-r-title">${product.code} 給付保障 <span class="tag">${benefits.length} 項</span></div>
+      <div class="cs-benefits">
+        ${benefits.map((b, i) => `
+          <div class="cs-bf ${b.hot ? 'hot' : ''}">
+            <div class="n">${i + 1}</div>
+            <div class="body">
+              <div class="t">${b.title}</div>
+              <div class="d">${b.desc}</div>
+              ${b.chips ? `<div class="chips">${b.chips.map(c => `<span>${c}</span>`).join('')}</div>` : ''}
+              ${b.chipsNote ? `<div class="cn">${b.chipsNote}</div>` : ''}
+            </div>
+            <div class="amt"><div class="a">${b.amount}</div>${b.sub ? `<div class="s">${b.sub}</div>` : ''}</div>
+          </div>`).join('')}
+      </div>
+      <div class="cs-foot">各項保險金實際給付金額及條件以保單條款規定為準。</div>`;
+    document.getElementById('cs-benefit-card').style.display = 'block';
+
+    const columns = isCI ? CI_TABLE_COLUMNS : CANCER_TABLE_COLUMNS;
     const head = '<tr>' + columns.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = rows.map(row => '<tr>' + columns.map(c => {
       const v = row[c.key];
