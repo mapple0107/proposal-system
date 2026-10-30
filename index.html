@@ -203,7 +203,7 @@
   /* ---------- 男女防癌險：商品試算工作台（CLZ / CLX / CIA / CIB） ---------- */
   #view-cancer .back-link { margin-bottom: 18px; color: var(--cs-accent); }
   /* 配色：預設藍色；女性商品（CLX / CIB）於 #view-cancer 加上 .cs-female 改為珊瑚蜜桃色 */
-  #view-cancer {
+  #view-cancer, #view-dividend {
     --cs-accent: #2554e0;
     --cs-deep: #1e3a8a;
     --cs-tint: #eef3fc;
@@ -421,6 +421,17 @@
   .cs-bf .a small { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; font-weight: 800; }
   .cs-bf .s { margin-top: 4px; font-size: 12px; color: #9aa3b2; }
 
+  /* ---------- 保額型分紅：客戶資料 + 商品分頁 ---------- */
+  #view-dividend .back-link { margin-bottom: 18px; color: var(--cs-accent); }
+  .dv-client-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .dv-f label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: #5b6475; }
+  .dv-f .radio-group { height: 52px; }
+  .dv-f .radio-pill { display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 16px; }
+  .dv-f .radio-pill.active { background: var(--cs-accent); border-color: var(--cs-accent); }
+  .dv-tabs { grid-template-columns: repeat(var(--n, 7), 1fr); max-width: none; margin: 24px 0 26px; }
+  .dv-tabs .cs-tab .code { font-size: 18px; }
+  .dv-product .cs-head { margin-bottom: 6px; }
+  .dv-product .cs-code { font-size: 48px; }
   @media (max-width: 760px) {
     .cs-grid { grid-template-columns: 1fr; }
     .cs-panel { position: static; min-height: 0; padding: 30px 20px; }
@@ -438,6 +449,9 @@
     .cs-term .r { font-size: 11.5px; white-space: nowrap; }
     .cs-face-num input { width: 104px; font-size: 38px; }
     .cs-head { flex-direction: column-reverse; }
+    .dv-client-grid { grid-template-columns: 1fr; }
+    .dv-tabs { grid-template-columns: repeat(4, 1fr); }
+    .dv-product .cs-code { font-size: 38px; }
     .cs-r-big { font-size: 46px; }
     .cs-freq-tile .v { font-size: 15px; }
     .cs-bf { grid-template-columns: 30px 1fr; padding: 18px 8px; }
@@ -486,6 +500,39 @@
       <h1 class="page-title" id="module-title"></h1>
       <div class="subtitle" id="module-subtitle"></div>
       <div class="product-list" id="product-list"></div>
+    </div>
+
+    <!-- 保額型分紅：上方客戶資料，下方商品分頁 -->
+    <div class="view" id="view-dividend">
+      <button class="back-link" onclick="showHome()">← 返回首頁</button>
+      <div class="cs-card" id="dv-client">
+        <div class="cs-sec first">客戶基本資料</div>
+        <div class="dv-client-grid">
+          <div class="dv-f"><label>被保險人姓名</label><input class="cs-input year" type="text" id="pfa-name" value="客戶"></div>
+          <div class="dv-f"><label>性別</label>
+            <div class="radio-group" data-target="pfa-gender">
+              <div class="radio-pill active" data-value="女">女</div>
+              <div class="radio-pill" data-value="男">男</div>
+            </div>
+            <input type="hidden" id="pfa-gender" value="女">
+          </div>
+        </div>
+        <div class="dv-f"><label>生日（民國）</label></div>
+        <div class="cs-birth">
+          <input class="cs-input year" id="pfa-birth-year" type="number" inputmode="numeric" placeholder="民國年 (e.g. 79)">
+          <input class="cs-input" id="pfa-birth-month" type="number" inputmode="numeric" placeholder="月">
+          <input class="cs-input" id="pfa-birth-day" type="number" inputmode="numeric" placeholder="日">
+        </div>
+        <div class="cs-age" id="dv-age"></div>
+      </div>
+      <div class="cs-tabs dv-tabs" id="dv-tabs"></div>
+      <div class="cs-card dv-product">
+        <div class="cs-head">
+          <div><div class="cs-code" id="dv-code"></div><div class="cs-desc" id="dv-desc"></div></div>
+          <div class="cs-pill">美元保單</div>
+        </div>
+        <div id="dv-form"></div>
+      </div>
     </div>
 
     <!-- 男女防癌險：商品試算工作台 -->
@@ -672,6 +719,12 @@
   function showModule(index) {
     currentModuleIndex = index;
     const mod = MODULES[index];
+    // 保額型分紅：不顯示商品列表，上方共用客戶資料、下方分頁切換商品
+    if (mod.products.length && mod.products.every(p => p.calcType === 'PFA')) {
+      const keep = dv.moduleIndex === index && dv.productIndex !== null;
+      showDividendStudio(index, keep ? dv.productIndex : 0);
+      return;
+    }
     // 男女防癌險：不顯示商品列表，直接進入分頁式試算工作台
     // （回到這個分類時，停在上次看的商品）
     if (mod.products.length && mod.products.every(p => p.calcType === 'CANCER')) {
@@ -737,8 +790,72 @@
   // ============================================================
   const PFA_API_BASE = "https://proposal-calculator-backend-production.up.railway.app";
 
-  function renderPFAFormHTML(product) {
-    return `
+  // ============================================================
+  // 保額型分紅工作台：客戶姓名／性別／生日填一次，切換商品分頁時保留
+  // ============================================================
+  const dv = { moduleIndex: null, productIndex: null, inited: false };
+
+  function dvTypeLabel(p) {
+    return (p.freqOptions || [])[0] === '躉繳' ? '躉繳' : `${p.paymentTerm} 年期`;
+  }
+
+  function showDividendStudio(moduleIndex, productIndex) {
+    dv.moduleIndex = moduleIndex;
+    currentModuleIndex = moduleIndex;
+    if (!dv.inited) {
+      initRadioGroups(document.getElementById('dv-client'));
+      ['pfa-birth-year', 'pfa-birth-month', 'pfa-birth-day'].forEach(id =>
+        document.getElementById(id).addEventListener('input', dvUpdateAge));
+      dv.inited = true;
+    }
+    dv.productIndex = productIndex;
+    renderDividendProduct();
+    switchView('view-dividend');
+  }
+
+  function switchDividendProduct(productIndex) {
+    if (productIndex === dv.productIndex) return;
+    dv.productIndex = productIndex;
+    renderDividendProduct();
+  }
+
+  function renderDividendProduct() {
+    const mod = MODULES[dv.moduleIndex];
+    const p = mod.products[dv.productIndex];
+    document.getElementById('dv-tabs').style.setProperty('--n', mod.products.length);
+    document.getElementById('dv-tabs').innerHTML = mod.products.map((x, i) => `
+      <button class="cs-tab ${i === dv.productIndex ? 'active' : ''}" onclick="switchDividendProduct(${i})">
+        <span class="code">${x.code}</span>
+        <span class="sub"><span>${(x.fullName || '').slice(0, 4)}</span><span class="sep">・</span><span>${dvTypeLabel(x)}</span></span>
+      </button>`).join('');
+    document.getElementById('dv-code').textContent = p.code;
+    document.getElementById('dv-desc').textContent =
+      `富邦人壽${p.fullName || ''} · ${dvTypeLabel(p)} · 投保年齡 ${p.ageHint || '依商品規定'}`;
+    const formEl = document.getElementById('dv-form');
+    formEl.innerHTML = renderPFAFormHTML(p, { skipInsured: true });
+    initRadioGroups(formEl);
+    document.getElementById('pfa-submit-btn').addEventListener('click', () => submitPFACalc(p));
+    dvUpdateAge();
+  }
+
+  function dvUpdateAge() {
+    const el = document.getElementById('dv-age');
+    const y = document.getElementById('pfa-birth-year').value;
+    const m = document.getElementById('pfa-birth-month').value;
+    const d = document.getElementById('pfa-birth-day').value;
+    if (!y || !m || !d) { el.textContent = ''; el.className = 'cs-age'; return; }
+    const r = calcInsuranceAndActualAge(y, m, d, new Date());
+    if (!r) { el.textContent = '請確認生日是否正確'; el.className = 'cs-age warn'; return; }
+    const p = MODULES[dv.moduleIndex].products[dv.productIndex];
+    const max = Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
+    const over = max && r.insuranceAge > max;
+    el.textContent = `保險年齡 ${r.insuranceAge} 歲　實際年齡 ${r.actualAge} 歲` + (over ? `　（超過 ${p.code} 投保年齡上限 ${max} 歲）` : '');
+    el.className = over ? 'cs-age warn' : 'cs-age';
+  }
+
+  // opts.skipInsured：保額型分紅工作台已在上方共用「客戶基本資料」，表單只渲染保單設定以下
+  function renderPFAFormHTML(product, opts = {}) {
+    return `${opts.skipInsured ? '' : `
       <div class="form-section">
         <div class="form-section-title">被保險人基本資料</div>
         <div class="form-grid">
@@ -767,6 +884,7 @@
           </div>
         </div>
       </div>
+      `}
 
       <div class="form-section">
         <div class="form-section-title">保單設定</div>
@@ -782,7 +900,7 @@
             </select>
           </div>
         </div>
-        <div class="field-note">${product.fullName ? `富邦人壽${product.fullName}（美元）・` : ''}投保年齡：${product.ageHint || '依商品規定'}・保額 2 萬起（上限依投保年齡）</div>
+        <div class="field-note">${opts.skipInsured ? '' : `${product.fullName ? `富邦人壽${product.fullName}（美元）・` : ''}投保年齡：${product.ageHint || '依商品規定'}・`}保額 2 萬起（上限依投保年齡）</div>
         <div class="field" style="margin-top:14px;">
           <label>試算依據</label>
           <div class="radio-group" data-target="pfa-input-mode">
