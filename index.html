@@ -528,11 +528,20 @@
       name: "保額型分紅",
       icon: "💰",
       products: [
-        { code: "PFA3", status: "ready", calcType: "PFA", apiProduct: "PFA3", paymentTerm: 3 },
-        { code: "PFA6", status: "ready", calcType: "PFA", apiProduct: "PFA6", paymentTerm: 6 },
-        { code: "PFJ6", status: "pending" },
-        { code: "PFK1", status: "pending" },
-        { code: "PFK2", status: "pending" },
+        { code: "PFA3", status: "ready", calcType: "PFA", apiProduct: "PFA3", paymentTerm: 3,
+          fullName: "美富紅運外幣分紅終身壽險", ageHint: "0～75 歲" },
+        { code: "PFA6", status: "ready", calcType: "PFA", apiProduct: "PFA6", paymentTerm: 6,
+          fullName: "美富紅運外幣分紅終身壽險", ageHint: "0～75 歲" },
+        { code: "PFJ6", status: "ready", calcType: "PFA", apiProduct: "PFJ6", paymentTerm: 6,
+          fullName: "美富紅盈外幣分紅終身壽險", ageHint: "0～76 歲", hasScenario: false, faceDefault: 10 },
+        { code: "PFK1", status: "ready", calcType: "PFA", apiProduct: "PFK1", paymentTerm: 1, genderLabel: "（躉繳）",
+          fullName: "智富紅運外幣分紅終身壽險", ageHint: "0～80 歲", freqOptions: ["躉繳"], faceDefault: 15 },
+        { code: "PFK2", status: "ready", calcType: "PFA", apiProduct: "PFK2", paymentTerm: 2, genderLabel: "（2 年期）",
+          fullName: "智富紅運外幣分紅終身壽險", ageHint: "0～78 歲", faceDefault: 15 },
+        { code: "FPE（躉）", status: "ready", calcType: "PFA", apiProduct: "FPE1", paymentTerm: 1,
+          fullName: "鴻運穩傳外幣分紅終身壽險", ageHint: "0～80 歲", freqOptions: ["躉繳"], hasScenario: false, faceDefault: 30 },
+        { code: "FPE(2)", status: "ready", calcType: "PFA", apiProduct: "FPE2", paymentTerm: 2,
+          fullName: "鴻運穩傳外幣分紅終身壽險", ageHint: "0～78 歲", hasScenario: false, faceDefault: 30 },
       ]
     },
     {
@@ -764,18 +773,16 @@
         <div class="form-grid">
           <div class="field">
             <label>主約繳費年期</label>
-            <input type="text" value="${product.paymentTerm} 年期（${product.code}）" disabled style="background:#f0f0f2;color:#86868b;">
+            <input type="text" value="${(product.freqOptions || [])[0] === '躉繳' ? '躉繳（一次繳清）' : product.paymentTerm + ' 年期'}（${product.code}）" disabled style="background:#f0f0f2;color:#86868b;">
           </div>
           <div class="field">
             <label>繳別</label>
-            <select id="pfa-payment-freq">
-              <option value="年繳">年繳</option>
-              <option value="半年繳">半年繳</option>
-              <option value="季繳">季繳</option>
-              <option value="月繳">月繳</option>
+            <select id="pfa-payment-freq" ${(product.freqOptions || []).length === 1 ? 'disabled style="background:#f0f0f2;color:#86868b;"' : ''}>
+              ${(product.freqOptions || ['年繳', '半年繳', '季繳', '月繳']).map(f => `<option value="${f}">${f}</option>`).join('')}
             </select>
           </div>
         </div>
+        <div class="field-note">${product.fullName ? `富邦人壽${product.fullName}（美元）・` : ''}投保年齡：${product.ageHint || '依商品規定'}・保額 2 萬起（上限依投保年齡）</div>
         <div class="field" style="margin-top:14px;">
           <label>試算依據</label>
           <div class="radio-group" data-target="pfa-input-mode">
@@ -787,13 +794,13 @@
         <div class="form-grid" style="margin-top:14px;">
           <div class="field" id="pfa-face-amount-field">
             <label>保額（萬元）</label>
-            <input type="number" id="pfa-face-amount" value="30" min="0" step="0.1">
+            <input type="number" id="pfa-face-amount" value="${product.faceDefault ?? 30}" min="0" step="0.1">
           </div>
           <div class="field" id="pfa-premium-field" style="display:none;">
-            <label>希望年繳保費（元，未折扣前）</label>
+            <label>希望${(product.freqOptions || [])[0] === '躉繳' ? '躉繳' : '年繳'}保費（元，未折扣前）</label>
             <input type="number" id="pfa-premium" value="100000" min="0" step="1000">
           </div>
-          <div class="field">
+          <div class="field" ${product.hasScenario === false ? 'style="display:none;"' : ''}>
             <label>建議書標示紅利等級</label>
             <select id="pfa-dividend-scenario">
               <option value="中分紅">中分紅（最可能紅利）</option>
@@ -959,7 +966,7 @@
       <div class="summary-tile"><div class="label">最終保額（萬元）</div><div class="value">${fmtNum(p.final_face_amount_wan)}</div></div>
       <div class="summary-tile"><div class="label">首期實繳保費</div><div class="value">${fmtNum(p.first_period_premium)}</div></div>
       <div class="summary-tile"><div class="label">首年實繳保費</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
-      <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${fmtNum(p.renewal_year_premium)}</div></div>
+      <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${p.payment_freq === '躉繳' ? '無（躉繳）' : fmtNum(p.renewal_year_premium)}</div></div>
     `;
 
     const tabsEl = document.getElementById('pfa-scenario-tabs');
