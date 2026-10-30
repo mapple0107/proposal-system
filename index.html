@@ -180,8 +180,9 @@
   .pfa-single-row .value { margin-top: 8px; font-size: 26px; font-weight: 800; color: #1e3a8a; white-space: nowrap; }
   .pfa-single-row .value small { font-size: 14px; font-weight: 700; color: #3a4a6b; }
   .pfa-single-row .note { margin-top: 6px; font-size: 12px; color: #6b7a96; }
+  .pfa-tools { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
   .pfa-currency-btn {
-    margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px;
     border: 1.5px solid #c7d6f3; background: #eef3fc; color: #1e3a8a; font-size: 13.5px; font-weight: 800;
     font-family: inherit; cursor: pointer; transition: all .15s;
   }
@@ -189,6 +190,60 @@
   .pfa-currency-btn:hover { border-color: #1e3a8a; }
   .pfa-currency-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
   #pfa-result-table th small { font-size: 11px; font-weight: 600; color: #8a93a3; }
+  /* ---------- 保額型分紅：比較商品 ---------- */
+  .pfa-compare-btn { background: #fff; }
+  .pfa-compare { margin-top: 22px; padding: 22px 20px; border-radius: 20px; background: #f6f9fe; border: 1.5px solid #d9e3f7; }
+  .pc-head { display: flex; justify-content: space-between; align-items: center; }
+  .pc-title { font-size: 18px; font-weight: 800; color: #1e3a8a; }
+  .pc-close { border: none; background: #e3ecfb; color: #1e3a8a; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; }
+  .pc-label { margin: 16px 0 8px; font-size: 13px; font-weight: 700; color: #5b6475; }
+  .pc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pc-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 104px; padding: 9px 12px; border-radius: 14px; border: 1.5px solid #d9e3f7; background: #fff; cursor: pointer; font-family: inherit; color: #2b3242; transition: all .15s; }
+  .pc-chip b { font-size: 15px; font-weight: 800; }
+  .pc-chip small { font-size: 11px; color: #7b8494; }
+  .pc-chip.on { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+  .pc-chip.on small { color: #d6e0f7; }
+  .pc-basis { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; }
+  .pc-basis .radio-group { min-width: 0; }
+  .pc-basis .radio-pill { min-width: 0; white-space: nowrap; }
+  .pfa-compare { min-width: 0; }
+  .pc-result-head, .pc-table-wrap { max-width: 100%; }
+  .pc-basis .radio-pill.active { background: #1e3a8a; border-color: #1e3a8a; }
+  .pc-value { display: flex; align-items: center; gap: 10px; }
+  .pc-value input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #d9e3f7; background: #fff; font-size: 16px; font-weight: 700; font-family: inherit; }
+  .pc-value span { font-size: 13px; font-weight: 700; color: #5b6475; white-space: nowrap; }
+  .pc-note { margin-top: 8px; font-size: 12px; line-height: 1.6; color: #7b8494; }
+  .pc-run { margin-top: 16px; width: 100%; padding: 12px; border: none; border-radius: 12px; background: #1e3a8a; color: #fff; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; }
+  .pc-run:disabled { opacity: .6; cursor: wait; }
+  .pc-err { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: #fdeeec; color: #b3261e; font-size: 13.5px; }
+  .pc-loading { margin-top: 18px; display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: #5b6475; }
+  .pc-loading .cs-spinner { width: 26px; height: 26px; border-width: 3px; border-color: #d6e3fa; border-top-color: #1e3a8a; }
+  .pc-result-head { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pc-client { font-size: 13.5px; font-weight: 700; color: #1d2433; }
+  .pc-scen { margin-top: 12px; }
+  .pc-table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid #e3e9f3; background: #fff; }
+  .pc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .pc-table th, .pc-table td { padding: 10px 12px; border-bottom: 1px solid #eef1f6; text-align: center; vertical-align: middle; }
+  .pc-table tr > th:first-child { position: sticky; left: 0; z-index: 1; background: #f8fafd; text-align: left; font-size: 13px; font-weight: 700; color: #3a4150; white-space: nowrap; min-width: 108px; }
+  .pc-table th small, .pc-table td small { font-size: 11px; font-weight: 600; color: #8a93a3; }
+  .pc-table td { font-weight: 700; color: #1d2433; white-space: nowrap; }
+  .pc-colhead { background: #eef3fc; min-width: 130px; }
+  .pc-colhead .code { font-size: 17px; font-weight: 800; color: #1e3a8a; }
+  .pc-colhead .nm { font-size: 11px; font-weight: 600; color: #5b6475; white-space: nowrap; }
+  .pc-colhead .ty { margin-top: 2px; font-size: 11.5px; font-weight: 700; color: #2554e0; }
+  .pc-table td.best { background: #e3f4e9; color: #126b34; }
+  .pc-table td.best small { color: #2f8a50; }
+  .pc-table td.na { color: #b3261e; font-weight: 600; white-space: normal; }
+  .pc-table tr.pc-grp > * { border-top: 2px solid #d9e3f7; }
+  .pc-table .grp { display: block; font-size: 11.5px; font-weight: 800; color: #2554e0; }
+  .pc-table tr.pc-key td { font-size: 15px; }
+  .pc-foot { margin-top: 10px; font-size: 12px; line-height: 1.6; color: #8a93a3; }
+  @media (max-width: 560px) {
+    .pc-basis { grid-template-columns: minmax(0, 1fr); }
+    .pfa-compare { padding: 18px 14px; }
+    .pc-chip { min-width: calc(50% - 4px); }
+    .pfa-tools { margin-left: 0; width: 100%; justify-content: flex-start; }
+  }
   .summary-tile { background: #f9fafc; border-radius: 12px; padding: 12px 14px; }
   .summary-tile .label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
   .summary-tile .value { font-size: 17px; font-weight: 700; color: #1d1d1f; }
@@ -880,6 +935,259 @@
     el.className = over ? 'cs-age warn' : 'cs-age';
   }
 
+  // ============================================================
+  // 保額型分紅：比較商品
+  // 以同一位客戶、相同總繳保費（台幣，依各商品繳費年期平均分攤；躉繳一次繳清）
+  // 或相同保額，逐一呼叫後端用官方 Excel 試算，再並排比較解約金／身故保障等。
+  // ============================================================
+  const pfaCompare = {
+    selected: null, basis: 'total', value: null, results: null, order: [],
+    scenario: 'most_likely', running: false, rate: null, date: '', clientLabel: '',
+  };
+  const PC_YEARS = [5, 10, 15, 20, 30];
+
+  function pcProducts() { return MODULES[dv.moduleIndex].products; }
+  function pcCurrent() { return pcProducts()[dv.productIndex]; }
+  function pcTypeLabel(p) { return pfaIsSingle(p) ? '躉繳' : `${p.paymentTerm} 年期`; }
+
+  function pcPaidUsd(pr) {
+    const term = pr.payment_term || 1;
+    return pr.payment_freq === '躉繳' ? pr.first_year_premium : pr.first_year_premium + pr.renewal_year_premium * (term - 1);
+  }
+
+  function pcUpdateButton() {
+    const btn = document.getElementById('pfa-compare-btn');
+    const panel = document.getElementById('pfa-compare');
+    if (btn && panel) btn.classList.toggle('active', panel.style.display !== 'none');
+  }
+
+  function pfaToggleCompare() {
+    const panel = document.getElementById('pfa-compare');
+    if (!panel) return;
+    if (panel.style.display !== 'none') { panel.style.display = 'none'; pcUpdateButton(); return; }
+    const cur = pcCurrent();
+    if (!pfaCompare.selected) pfaCompare.selected = new Set([cur.apiProduct]);
+    pfaCompare.selected.add(cur.apiProduct);
+    // 預設比較基準：目前這筆試算的總繳實繳保費（台幣萬元，取 1 位小數）
+    if (pfaLastResult && pfaLastResult.premiums) {
+      const pr = pfaLastResult.premiums;
+      if (pfaLastCalc.rate > 0) {
+        pfaCompare.basis = 'total';
+        pfaCompare.value = Math.round(pcPaidUsd(pr) * pfaLastCalc.rate / 1000) / 10;
+      } else {
+        pfaCompare.basis = 'face';
+        pfaCompare.value = pr.final_face_amount_wan;
+      }
+    }
+    panel.style.display = 'block';
+    pcRenderPanel();
+    pcUpdateButton();
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function pcRenderPanel() {
+    const panel = document.getElementById('pfa-compare');
+    const products = pcProducts();
+    const isTotal = pfaCompare.basis === 'total';
+    panel.innerHTML = `
+      <div class="pc-head">
+        <div class="pc-title">比較商品</div>
+        <button class="pc-close" onclick="pfaToggleCompare()" aria-label="關閉">✕</button>
+      </div>
+      <div class="pc-label">選擇要比較的商品（可複選）</div>
+      <div class="pc-chips">
+        ${products.map(p => `
+          <button class="pc-chip ${pfaCompare.selected.has(p.apiProduct) ? 'on' : ''}" data-api="${p.apiProduct}">
+            <b>${p.code}</b><small>${(p.fullName || '').slice(0, 4)}・${pcTypeLabel(p)}</small>
+          </button>`).join('')}
+      </div>
+      <div class="pc-label">比較基準</div>
+      <div class="pc-basis">
+        <div class="radio-group">
+          <div class="radio-pill ${isTotal ? 'active' : ''}" data-basis="total">相同總繳保費</div>
+          <div class="radio-pill ${isTotal ? '' : 'active'}" data-basis="face">相同保額</div>
+        </div>
+        <div class="pc-value">
+          <input type="number" id="pc-value" min="0" step="0.1" value="${pfaCompare.value ?? ''}">
+          <span>${isTotal ? '萬元（台幣）' : '萬美元'}</span>
+        </div>
+      </div>
+      <div class="pc-note">${isTotal
+        ? `總繳保費依各商品繳費年期平均分攤（例：100 萬 → 6 年期每年約 16.7 萬、躉繳一次 100 萬），以 ${pfaRate.date ? pfaRate.date + ' ' : ''}匯率 ${pfaRate.value ?? '—'} 換算美元；保額由官方試算表換算。`
+        : '各商品使用相同保額（萬美元）試算，保費依各商品費率不同。'}　繳別一律以年繳（躉繳商品為躉繳）比較。</div>
+      <button class="pc-run" id="pc-run" ${pfaCompare.running ? 'disabled' : ''}>${pfaCompare.running ? '比較中…' : `開始比較（${pfaCompare.selected.size} 項商品）`}</button>
+      <div id="pc-result"></div>
+    `;
+    panel.querySelectorAll('.pc-chip').forEach(chip => chip.addEventListener('click', () => {
+      const api = chip.dataset.api;
+      if (pfaCompare.selected.has(api)) pfaCompare.selected.delete(api); else pfaCompare.selected.add(api);
+      chip.classList.toggle('on');
+      const run = document.getElementById('pc-run');
+      if (!pfaCompare.running) run.textContent = `開始比較（${pfaCompare.selected.size} 項商品）`;
+    }));
+    panel.querySelectorAll('.pc-basis .radio-pill').forEach(pill => pill.addEventListener('click', () => {
+      if (pill.dataset.basis === pfaCompare.basis) return;
+      pfaCompare.basis = pill.dataset.basis;
+      pfaCompare.value = pfaCompare.basis === 'face'
+        ? (pfaLastResult ? pfaLastResult.premiums.final_face_amount_wan : 10)
+        : (pfaLastResult && pfaLastCalc.rate > 0 ? Math.round(pcPaidUsd(pfaLastResult.premiums) * pfaLastCalc.rate / 1000) / 10 : 100);
+      pcRenderPanel();
+    }));
+    document.getElementById('pc-value').addEventListener('input', e => { pfaCompare.value = Number(e.target.value); });
+    document.getElementById('pc-run').addEventListener('click', pcRun);
+    if (pfaCompare.results) pcRenderResult();
+  }
+
+  async function pcRun() {
+    const out = document.getElementById('pc-result');
+    const val = id => (document.getElementById(id) || {}).value;
+    const y = val('pfa-birth-year'), m = val('pfa-birth-month'), d = val('pfa-birth-day');
+    if (!y || !m || !d) { out.innerHTML = '<div class="pc-err">請先在上方填寫客戶生日</div>'; return; }
+    if (!pfaCompare.selected.size) { out.innerHTML = '<div class="pc-err">請至少選擇一項商品</div>'; return; }
+    if (!(pfaCompare.value > 0)) { out.innerHTML = '<div class="pc-err">請輸入比較基準金額</div>'; return; }
+    const rate = pfaRate.value;
+    if (pfaCompare.basis === 'total' && !(rate > 0)) { out.innerHTML = '<div class="pc-err">尚未取得美元匯率</div>'; return; }
+
+    const list = pcProducts().filter(p => pfaCompare.selected.has(p.apiProduct));
+    const age = calcInsuranceAndActualAge(y, m, d, new Date());
+    pfaCompare.clientLabel = `${val('pfa-name') || '客戶'}・${val('pfa-gender')}・保險年齡 ${age ? age.insuranceAge : '—'} 歲`;
+    pfaCompare.rate = rate; pfaCompare.date = pfaRate.date;
+    pfaCompare.order = list.map(p => p.apiProduct);
+    pfaCompare.results = {};
+    pfaCompare.running = true;
+    const runBtn = document.getElementById('pc-run');
+    runBtn.disabled = true;
+
+    const progress = () => {
+      const done = Object.keys(pfaCompare.results).length;
+      runBtn.textContent = `比較中…（${done}/${list.length}）`;
+      out.innerHTML = `<div class="pc-loading"><div class="cs-spinner"></div>正在用官方 Excel 試算各商品（${done}/${list.length}），每項約 3～10 秒</div>`;
+    };
+    progress();
+
+    const one = async p => {
+      const payload = {
+        name: val('pfa-name') || '客戶', gender: val('pfa-gender') || '女',
+        birth_year: Number(y), birth_month: Number(m), birth_day: Number(d),
+        payment_term: p.paymentTerm, payment_freq: pfaIsSingle(p) ? '躉繳' : '年繳',
+        dividend_scenario: '中分紅', relationship: val('pfa-relationship') || '同被保險人',
+        discount: val('pfa-discount') || '無', death_benefit_pct: 0, installment_period: 20, want_pdf: false,
+      };
+      if (pfaCompare.basis === 'total') {
+        payload.input_mode = 'premium';
+        payload.premium_amount = Math.round(pfaCompare.value * 10000 / rate / p.paymentTerm);
+      } else {
+        payload.input_mode = 'face_amount';
+        payload.face_amount_wan = pfaCompare.value;
+      }
+      try {
+        const resp = await fetch(`${PFA_API_BASE}/api/${p.apiProduct}/calculate`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        pfaCompare.results[p.apiProduct] = resp.ok ? data : { error: data.error || '試算失敗' };
+      } catch (e) {
+        pfaCompare.results[p.apiProduct] = { error: e.message === 'Failed to fetch' ? '連不上試算服務' : e.message };
+      }
+      progress();
+    };
+    // 依序試算（後端同一時間只能用 LibreOffice 算一筆，平行送出只會排隊）
+    for (const p of list) await one(p);
+
+    pfaCompare.running = false;
+    runBtn.disabled = false;
+    runBtn.textContent = `重新比較（${pfaCompare.selected.size} 項商品）`;
+    pcRenderResult();
+  }
+
+  function pcRenderResult() {
+    const out = document.getElementById('pc-result');
+    if (!out || !pfaCompare.results) return;
+    const products = pcProducts();
+    const cols = pfaCompare.order.map(api => ({ p: products.find(x => x.apiProduct === api), d: pfaCompare.results[api] }))
+      .filter(c => c.p && c.d);
+    const twd = pfaTableCurrency === 'TWD' && pfaCompare.rate > 0;
+    const money = v => (v === null || v === undefined) ? '—' : (twd ? '' : 'US$ ') + Math.round(twd ? v * pfaCompare.rate : v).toLocaleString('zh-TW');
+    const rowsOf = d => (d.tables && d.tables[pfaCompare.scenario] && d.tables[pfaCompare.scenario].rows) || [];
+    // 含紅利總金額（官方「年度末解約／身故時可領總金額」）；分紅為零情境的欄位可能空白，改用保證金額
+    const val = (r, key) => {
+      if (!r) return null;
+      if (key === 'cash') return r.total_cash_value ?? r.cash_value;
+      if (key === 'death') return r.total_death_benefit ?? r.death_benefit;
+      return r[key];
+    };
+    const at = (d, yr, key) => val(rowsOf(d).find(r => Math.round(r.policy_year) === yr), key);
+    const ok = c => !c.d.error;
+
+    // 每一列：取各商品數值，數值型的列標出最佳（最大，或回本年度最早）
+    const metric = (label, fn, opts = {}) => {
+      const vals = cols.map(c => ok(c) ? fn(c) : null);
+      const nums = vals.map(v => (v && typeof v.n === 'number') ? v.n : null).filter(n => n !== null);
+      const best = nums.length > 1 ? (opts.lowBest ? Math.min(...nums) : Math.max(...nums)) : null;
+      return `<tr class="${opts.cls || ''}"><th>${label}</th>${cols.map((c, i) => {
+        if (!ok(c)) return i === 0 && false ? '' : '<td class="na">—</td>';
+        const v = vals[i];
+        if (!v) return '<td>—</td>';
+        const isBest = best !== null && v.n === best && opts.highlight !== false;
+        return `<td class="${isBest ? 'best' : ''}">${v.html}</td>`;
+      }).join('')}</tr>`;
+    };
+
+    const scenarios = PFA_SCENARIO_ORDER.map(key => {
+      const any = cols.find(c => ok(c) && c.d.tables && c.d.tables[key]);
+      return `<button class="scenario-tab ${key === pfaCompare.scenario ? 'active' : ''}" data-key="${key}">${any ? any.d.tables[key].label : key}</button>`;
+    }).join('');
+
+    const head = `<tr><th></th>${cols.map(c => `<th class="pc-colhead"><div class="code">${c.p.code}</div><div class="nm">${c.p.fullName || ''}</div><div class="ty">${pcTypeLabel(c.p)}</div></th>`).join('')}</tr>`;
+    const errRow = cols.some(c => !ok(c))
+      ? `<tr class="pc-errrow"><th>試算狀態</th>${cols.map(c => ok(c) ? '<td>✓</td>' : `<td class="na">無法試算<br><small>${csEsc(c.d.error)}</small></td>`).join('')}</tr>` : '';
+
+    const body = [
+      errRow,
+      metric('保額（萬美元）', c => ({ n: c.d.premiums.final_face_amount_wan, html: Number(c.d.premiums.final_face_amount_wan).toLocaleString('en-US', { maximumFractionDigits: 1 }) })),
+      metric('保費', c => {
+        const pr = c.d.premiums;
+        return pr.payment_freq === '躉繳'
+          ? { html: `躉繳 ${money(pr.first_year_premium)}` }
+          : { html: `${money(pr.first_year_premium)}／年<br><small>× ${pr.payment_term} 年</small>` };
+      }, { highlight: false }),
+      metric('總繳實繳保費', c => ({ html: money(pcPaidUsd(c.d.premiums)) }), { highlight: false }),
+      metric('回本年度<br><small>解約總金額 ≥ 累計保費</small>', c => {
+        const r = rowsOf(c.d).find(r => val(r, 'cash') !== null && r.cum_premium && val(r, 'cash') >= r.cum_premium);
+        return r ? { n: -Math.round(r.policy_year), html: `第 ${Math.round(r.policy_year)} 年<br><small>${Math.round(r.age)} 歲</small>` } : { html: '未回本' };
+      }, { cls: 'pc-key' }),
+      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? '<span class="grp">解約總金額（含紅利）</span>' : ''}第 ${yr} 年`, c => {
+        const v = at(c.d, yr, 'cash');
+        if (v === null || v === undefined) return null;
+        const pct = Math.round(v / pcPaidUsd(c.d.premiums) * 100);
+        return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${pct}%</small>` };
+      }, { cls: i === 0 ? 'pc-grp' : '' })),
+      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? '<span class="grp">身故總金額（含紅利）</span>' : ''}第 ${yr} 年`, c => {
+        const v = at(c.d, yr, 'death');
+        if (v === null || v === undefined) return null;
+        return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${(v / pcPaidUsd(c.d.premiums)).toFixed(1)} 倍</small>` };
+      }, { cls: i === 0 ? 'pc-grp' : '' })),
+    ].join('');
+
+    out.innerHTML = `
+      <div class="pc-result-head">
+        <div class="pc-client">${csEsc(pfaCompare.clientLabel)}｜${pfaCompare.basis === 'total' ? `總繳保費 ${pfaCompare.value} 萬台幣` : `保額 ${pfaCompare.value} 萬美元`}</div>
+        <button class="pfa-currency-btn ${twd ? 'active' : ''}" id="pc-currency">${twd ? '顯示美元' : `換算新台幣<small>${pfaCompare.date ? pfaCompare.date + ' ' : ''}匯率 ${pfaCompare.rate}</small>`}</button>
+      </div>
+      <div class="scenario-tabs pc-scen">${scenarios}</div>
+      <div class="pc-table-wrap"><table class="pc-table">${head}${body}</table></div>
+      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證，實際以保單條款及建議書為準。${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
+    `;
+    out.querySelectorAll('.pc-scen .scenario-tab').forEach(t => t.addEventListener('click', () => {
+      pfaCompare.scenario = t.dataset.key; pcRenderResult();
+    }));
+    document.getElementById('pc-currency').addEventListener('click', () => {
+      pfaTableCurrency = pfaTableCurrency === 'TWD' ? 'USD' : 'TWD';
+      pcRenderResult();
+      if (pfaCurrentTable) renderPFATable(pfaCurrentTable);
+    });
+  }
+
   // ---- 保額型分紅：台幣保費換算與美元匯率 ----
   // 匯率預設取 open.er-api.com 的即時中間價，可手動修改；切換商品分頁時沿用同一個匯率。
   const pfaRate = { value: null, date: '', info: '載入即時匯率中…', loaded: false, failed: false };
@@ -1080,6 +1388,7 @@
         <div class="scenario-tabs" id="pfa-scenario-tabs"></div>
         <div class="table-wrap"><table class="result-table" id="pfa-result-table"></table></div>
         <button class="download-pdf-btn" id="pfa-download-btn" style="display:none;">📄 下載 PDF 建議書</button>
+        ${opts.skipInsured ? '<div class="pfa-compare" id="pfa-compare" style="display:none;"></div>' : ''}
       </div>
     `;
   }
@@ -1234,14 +1543,21 @@
       const t = data.tables[key];
       return `<button class="scenario-tab ${i === 0 ? 'active' : ''}" data-key="${key}">${t ? t.label : key}</button>`;
     }).join('');
+    const tools = [];
+    if (pfaLastCalc.rate > 0) tools.push('<button class="pfa-currency-btn" id="pfa-currency-btn"></button>');
+    else pfaTableCurrency = 'USD';
+    if (document.getElementById('pfa-compare')) tools.push('<button class="pfa-currency-btn pfa-compare-btn" id="pfa-compare-btn">⇄ 比較商品</button>');
+    if (tools.length) tabsEl.insertAdjacentHTML('beforeend', `<span class="pfa-tools">${tools.join('')}</span>`);
     if (pfaLastCalc.rate > 0) {
-      tabsEl.insertAdjacentHTML('beforeend', '<button class="pfa-currency-btn" id="pfa-currency-btn"></button>');
       document.getElementById('pfa-currency-btn').addEventListener('click', () => {
         pfaTableCurrency = pfaTableCurrency === 'TWD' ? 'USD' : 'TWD';
         renderPFATable(pfaCurrentTable);
+        pcRenderResult();
       });
-    } else {
-      pfaTableCurrency = 'USD';
+    }
+    if (document.getElementById('pfa-compare-btn')) {
+      document.getElementById('pfa-compare-btn').addEventListener('click', pfaToggleCompare);
+      pcUpdateButton();
     }
     tabsEl.querySelectorAll('.scenario-tab').forEach(tab => {
       tab.addEventListener('click', () => {
