@@ -331,6 +331,18 @@
       products: [
         { code: "CLZ", status: "ready", calcType: "CANCER", apiProduct: "CLZ", fixedGender: "男", genderLabel: "（男性專屬）" },
         { code: "CLX", status: "ready", calcType: "CANCER", apiProduct: "CLX", fixedGender: "女", genderLabel: "（女性專屬）" },
+        { code: "CIA", status: "ready", calcType: "CANCER", apiProduct: "CIA", fixedGender: "男", genderLabel: "（男性專屬・終身）",
+          paymentTermOptions: [10, 20, 30],
+          ageHint: "10年期 0足歲～65歲；20年期 0足歲～55歲；30年期 0足歲～45歲（保障終身）",
+          faceAmountDefault: 100, faceAmountMin: 50, faceAmountMax: 500,
+          faceRangeHint: "保額範圍：50 ~ 500 萬",
+          tableLayout: 'CI' },
+        { code: "CIB", status: "ready", calcType: "CANCER", apiProduct: "CIB", fixedGender: "女", genderLabel: "（女性專屬・終身）",
+          paymentTermOptions: [10, 20, 30],
+          ageHint: "10年期 0足歲～65歲；20年期 0足歲～55歲；30年期 0足歲～45歲（保障終身）",
+          faceAmountDefault: 100, faceAmountMin: 50, faceAmountMax: 500,
+          faceRangeHint: "保額範圍：50 ~ 500 萬",
+          tableLayout: 'CI' },
       ]
     },
   ];
@@ -761,8 +773,7 @@
           <div class="field">
             <label>繳費年期</label>
             <select id="cancer-payment-term">
-              <option value="20">20 年</option>
-              <option value="10">10 年</option>
+              ${(product.paymentTermOptions || [20, 10]).map(t => `<option value="${t}">${t} 年</option>`).join('')}
             </select>
           </div>
           <div class="field">
@@ -775,12 +786,12 @@
             </select>
           </div>
         </div>
-        <div class="field-note">投保年齡：10年期 18足歲～60歲；20年期 18足歲～50歲</div>
+        <div class="field-note">投保年齡：${product.ageHint || '10年期 18足歲～60歲；20年期 18足歲～50歲'}</div>
         <div class="field" style="margin-top:14px;">
           <label>保額（萬元）</label>
-          <input type="number" id="cancer-face-amount" value="50" min="0" step="1">
+          <input type="number" id="cancer-face-amount" value="${product.faceAmountDefault ?? 50}" min="${product.faceAmountMin ?? 0}"${product.faceAmountMax ? ` max="${product.faceAmountMax}"` : ''} step="1">
         </div>
-        <div class="field-note">保額範圍：50 ~ 300 萬</div>
+        <div class="field-note">${product.faceRangeHint || '保額範圍：50 ~ 300 萬'}</div>
       </div>
 
       <details class="advanced">
@@ -899,6 +910,18 @@
     { key: 'death_benefit', label: '身故保障' },
   ];
 
+  // CIA / CIB（防癌終身健康保險）：對應官方建議書「投保利益表」欄位
+  const CI_TABLE_COLUMNS = [
+    { key: 'policy_year', label: '保單年度' },
+    { key: 'age', label: '保險年齡' },
+    { key: 'annual_premium', label: '年度實繳保費' },
+    { key: 'cum_premium', label: '累計實繳保費' },
+    { key: 'cancer_early', label: '首次罹患癌症(初期)或癌症(輕度)保險金' },
+    { key: 'cancer_severe', label: '首次罹患癌症(重度)保險金' },
+    { key: 'cancer_specific', label: '首次罹患特定癌症(重度)保險金' },
+    { key: 'death_benefit', label: '年度末身故保障' },
+  ];
+
   async function submitCancerCalc(product) {
     const errorEl = document.getElementById('cancer-error');
     const loadingEl = document.getElementById('cancer-loading');
@@ -943,7 +966,7 @@
       if (!resp.ok) {
         throw new Error(data.error || '試算失敗，請確認輸入內容');
       }
-      renderCancerResults(data);
+      renderCancerResults(data, product);
     } catch (err) {
       errorEl.textContent = '試算失敗：' + err.message + '（若持續發生，可能是後端服務剛啟動需要暖機，請稍後再試一次）';
       errorEl.style.display = 'block';
@@ -953,7 +976,8 @@
     }
   }
 
-  function renderCancerResults(data) {
+  function renderCancerResults(data, product) {
+    const columns = (product && product.tableLayout === 'CI') ? CI_TABLE_COLUMNS : CANCER_TABLE_COLUMNS;
     const summaryEl = document.getElementById('cancer-summary-grid');
     const p = data.premiums || {};
     summaryEl.innerHTML = `
@@ -965,9 +989,9 @@
 
     const tableEl = document.getElementById('cancer-result-table');
     const rows = (data.tables && data.tables.main && data.tables.main.rows) || [];
-    const head = '<tr>' + CANCER_TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+    const head = '<tr>' + columns.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
     const body = rows.map(row =>
-      '<tr>' + CANCER_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + columns.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : fmtNum(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
 
