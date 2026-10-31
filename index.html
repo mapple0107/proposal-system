@@ -674,7 +674,20 @@
     {
       name: "利變型保單",
       icon: "📈",
-      products: []
+      products: [
+        { code: "FBM", status: "ready", calcType: "PFA", apiProduct: "FBM", tableType: "UL", hasScenario: false,
+          fullName: "順順美利外幣利率變動型終身壽險", termOptions: [6, 10, 20], paymentTerm: 6,
+          ageMax: { 6: 74, 10: 70, 20: 60 }, ageHint: "0～74 歲（10 年期 70 歲、20 年期 60 歲）", faceDefault: 30, faceMinWan: 1 },
+        { code: "FBO", status: "ready", calcType: "PFA", apiProduct: "FBO", tableType: "UL", hasScenario: false,
+          fullName: "美利大運外幣利率變動型終身壽險", termOptions: [2, 6, 8], paymentTerm: 2,
+          ageMax: { 2: 74, 6: 74, 8: 72 }, ageHint: "0～74 歲（8 年期 72 歲）", faceDefault: 10, faceMinWan: 1 },
+        { code: "FBX", status: "ready", calcType: "PFA", apiProduct: "FBX", tableType: "UL", hasScenario: false,
+          fullName: "美盈鴻旺外幣利率變動型終身壽險", freqOptions: ["躉繳", "年繳", "半年繳", "季繳", "月繳"], mixedSingle: true, paymentTerm: 2,
+          ageMax: { 1: 85, 2: 82 }, ageHint: "躉繳 0～85 歲、2 年期 0～82 歲", faceDefault: 20, faceMinWan: 1 },
+        { code: "FBV", status: "ready", calcType: "PFA", apiProduct: "FBV", tableType: "UL", hasScenario: false,
+          fullName: "美裕富足外幣利率變動型終身壽險", freqOptions: ["躉繳"], paymentTerm: 1,
+          ageMax: { 1: 88 }, ageHint: "0～88 歲", faceDefault: 5, faceMinWan: 0.5 },
+      ]
     },
     {
       name: "重大傷病險",
@@ -872,10 +885,17 @@
   const dv = { moduleIndex: null, productIndex: null, inited: false };
 
   function dvTypeLabel(p) {
+    if (p.termOptions) return `${p.termOptions.join('/')} 年期`;
+    if (p.mixedSingle) return `躉繳/${p.paymentTerm} 年期`;
     return (p.freqOptions || [])[0] === '躉繳' ? '躉繳' : `${p.paymentTerm} 年期`;
   }
 
   function showDividendStudio(moduleIndex, productIndex) {
+    if (dv.moduleIndex !== moduleIndex) {
+      // 換到另一個分類（保額型分紅 ↔ 利變型保單）：比較商品的選擇與結果不沿用
+      pfaCompare.selected = null; pfaCompare.results = null; pfaCompare.order = [];
+      dv.productIndex = null;
+    }
     dv.moduleIndex = moduleIndex;
     currentModuleIndex = moduleIndex;
     if (!dv.inited) {
@@ -918,8 +938,14 @@
     });
     ['pfa-annual-twd', 'pfa-total-twd'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', pfaUpdateConversion);
+      if (el) el.addEventListener('input', () => { el.dataset.touched = '1'; pfaUpdateConversion(); });
     });
+    const termEl = document.getElementById('pfa-term');
+    if (termEl) termEl.addEventListener('change', () => pfaSyncTermUI(p));
+    if (p.mixedSingle) {
+      document.getElementById('pfa-payment-freq').addEventListener('change', () => pfaSyncTermUI(p));
+      pfaSyncTermUI(p);   // 表單產生時欄位尚未在畫面上，產生後依實際繳別同步一次
+    }
     pfaUpdateConversion();
     pfaLoadRate();
     dvUpdateAge();
@@ -934,7 +960,7 @@
     const r = calcInsuranceAndActualAge(y, m, d, new Date());
     if (!r) { el.textContent = '請確認生日是否正確'; el.className = 'cs-age warn'; return; }
     const p = MODULES[dv.moduleIndex].products[dv.productIndex];
-    const max = Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
+    const max = p.ageMax ? p.ageMax[pfaTerm(p)] : Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
     const over = max && r.insuranceAge > max;
     el.textContent = `保險年齡 ${r.insuranceAge} 歲　實際年齡 ${r.actualAge} 歲` + (over ? `　（超過 ${p.code} 投保年齡上限 ${max} 歲）` : '');
     el.className = over ? 'cs-age warn' : 'cs-age';
@@ -954,6 +980,22 @@
   function pcProducts() { return MODULES[dv.moduleIndex].products; }
   function pcCurrent() { return pcProducts()[dv.productIndex]; }
   function pcTypeLabel(p) { return pfaIsSingle(p) ? '躉繳' : `${p.paymentTerm} 年期`; }
+  function pcVariants(p) {
+    if (p.termOptions) return p.termOptions.map(t => ({ key: `${p.apiProduct}-${t}`, p, term: t, freq: '年繳', label: `${t} 年期` }));
+    if (p.mixedSingle) return [
+      { key: `${p.apiProduct}-1`, p, term: 1, freq: '躉繳', label: '躉繳' },
+      { key: `${p.apiProduct}-${p.paymentTerm}`, p, term: p.paymentTerm, freq: '年繳', label: `${p.paymentTerm} 年期` },
+    ];
+    const single = (p.freqOptions || []).length === 1 && p.freqOptions[0] === '躉繳';
+    return [{ key: p.apiProduct, p, term: p.paymentTerm, freq: single ? '躉繳' : '年繳', label: single ? '躉繳' : `${p.paymentTerm} 年期` }];
+  }
+  function pcAllVariants() { return pcProducts().flatMap(pcVariants); }
+  function pcCurrentKey() {
+    const p = pcCurrent();
+    const vs = pcVariants(p);
+    if (vs.length === 1) return vs[0].key;
+    return `${p.apiProduct}-${pfaTerm(p)}`;
+  }
 
   function pcPaidUsd(pr) {
     const term = pr.payment_term || 1;
@@ -970,9 +1012,8 @@
     const panel = document.getElementById('pfa-compare');
     if (!panel) return;
     if (panel.style.display !== 'none') { panel.style.display = 'none'; pcUpdateButton(); return; }
-    const cur = pcCurrent();
-    if (!pfaCompare.selected) pfaCompare.selected = new Set([cur.apiProduct]);
-    pfaCompare.selected.add(cur.apiProduct);
+    if (!pfaCompare.selected) pfaCompare.selected = new Set();
+    pfaCompare.selected.add(pcCurrentKey());
     // 預設比較基準：目前這筆試算的總繳實繳保費（台幣萬元，取 1 位小數）
     if (pfaLastResult && pfaLastResult.premiums) {
       const pr = pfaLastResult.premiums;
@@ -992,7 +1033,7 @@
 
   function pcRenderPanel() {
     const panel = document.getElementById('pfa-compare');
-    const products = pcProducts();
+    const variants = pcAllVariants();
     const isTotal = pfaCompare.basis === 'total';
     panel.innerHTML = `
       <div class="pc-head">
@@ -1001,9 +1042,9 @@
       </div>
       <div class="pc-label">選擇要比較的商品（可複選）</div>
       <div class="pc-chips">
-        ${products.map(p => `
-          <button class="pc-chip ${pfaCompare.selected.has(p.apiProduct) ? 'on' : ''}" data-api="${p.apiProduct}">
-            <b>${p.code}</b><small>${(p.fullName || '').slice(0, 4)}・${pcTypeLabel(p)}</small>
+        ${variants.map(v => `
+          <button class="pc-chip ${pfaCompare.selected.has(v.key) ? 'on' : ''}" data-key="${v.key}">
+            <b>${v.p.code}</b><small>${(v.p.fullName || '').slice(0, 4)}・${v.label}</small>
           </button>`).join('')}
       </div>
       <div class="pc-label">比較基準</div>
@@ -1024,8 +1065,8 @@
       <div id="pc-result"></div>
     `;
     panel.querySelectorAll('.pc-chip').forEach(chip => chip.addEventListener('click', () => {
-      const api = chip.dataset.api;
-      if (pfaCompare.selected.has(api)) pfaCompare.selected.delete(api); else pfaCompare.selected.add(api);
+      const key = chip.dataset.key;
+      if (pfaCompare.selected.has(key)) pfaCompare.selected.delete(key); else pfaCompare.selected.add(key);
       chip.classList.toggle('on');
       const run = document.getElementById('pc-run');
       if (!pfaCompare.running) run.textContent = `開始比較（${pfaCompare.selected.size} 項商品）`;
@@ -1053,11 +1094,11 @@
     const rate = pfaRate.value;
     if (pfaCompare.basis === 'total' && !(rate > 0)) { out.innerHTML = '<div class="pc-err">尚未取得美元匯率</div>'; return; }
 
-    const list = pcProducts().filter(p => pfaCompare.selected.has(p.apiProduct));
+    const list = pcAllVariants().filter(v => pfaCompare.selected.has(v.key));
     const age = calcInsuranceAndActualAge(y, m, d, new Date());
     pfaCompare.clientLabel = `${val('pfa-name') || '客戶'}・${val('pfa-gender')}・保險年齡 ${age ? age.insuranceAge : '—'} 歲`;
     pfaCompare.rate = rate; pfaCompare.date = pfaRate.date;
-    pfaCompare.order = list.map(p => p.apiProduct);
+    pfaCompare.order = list.map(v => v.key);
     pfaCompare.results = {};
     pfaCompare.running = true;
     const runBtn = document.getElementById('pc-run');
@@ -1070,17 +1111,18 @@
     };
     progress();
 
-    const one = async p => {
+    const one = async v => {
+      const p = v.p;
       const payload = {
         name: val('pfa-name') || '客戶', gender: val('pfa-gender') || '女',
         birth_year: Number(y), birth_month: Number(m), birth_day: Number(d),
-        payment_term: p.paymentTerm, payment_freq: pfaIsSingle(p) ? '躉繳' : '年繳',
+        payment_term: v.term, payment_freq: v.freq,
         dividend_scenario: '中分紅', relationship: val('pfa-relationship') || '同被保險人',
         discount: val('pfa-discount') || '無', death_benefit_pct: 0, installment_period: 20, want_pdf: false,
       };
       if (pfaCompare.basis === 'total') {
         payload.input_mode = 'premium';
-        payload.premium_amount = Math.round(pfaCompare.value * 10000 / rate / p.paymentTerm);
+        payload.premium_amount = Math.round(pfaCompare.value * 10000 / rate / v.term);
       } else {
         payload.input_mode = 'face_amount';
         payload.face_amount_wan = pfaCompare.value;
@@ -1090,14 +1132,14 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
         });
         const data = await resp.json();
-        pfaCompare.results[p.apiProduct] = resp.ok ? data : { error: data.error || '試算失敗' };
+        pfaCompare.results[v.key] = resp.ok ? data : { error: data.error || '試算失敗' };
       } catch (e) {
-        pfaCompare.results[p.apiProduct] = { error: e.message === 'Failed to fetch' ? '連不上試算服務' : e.message };
+        pfaCompare.results[v.key] = { error: e.message === 'Failed to fetch' ? '連不上試算服務' : e.message };
       }
       progress();
     };
     // 依序試算（後端同一時間只能用 LibreOffice 算一筆，平行送出只會排隊）
-    for (const p of list) await one(p);
+    for (const v of list) await one(v);
 
     pfaCompare.running = false;
     runBtn.disabled = false;
@@ -1108,9 +1150,15 @@
   function pcRenderResult() {
     const out = document.getElementById('pc-result');
     if (!out || !pfaCompare.results) return;
-    const products = pcProducts();
-    const cols = pfaCompare.order.map(api => ({ p: products.find(x => x.apiProduct === api), d: pfaCompare.results[api] }))
-      .filter(c => c.p && c.d);
+    const variants = pcAllVariants();
+    const cols = pfaCompare.order.map(key => {
+      const v = variants.find(x => x.key === key);
+      return v ? { p: v.p, v, d: pfaCompare.results[key] } : null;
+    }).filter(c => c && c.d);
+    const isUL = cols.some(c => c.p.tableType === 'UL');
+    const bonusWord = isUL ? '含增值回饋分享金' : '含紅利';
+    const keys = [...new Set(cols.filter(c => !c.d.error).flatMap(c => pfaScenarioKeys(c.d.tables)))];
+    if (keys.length && !keys.includes(pfaCompare.scenario)) pfaCompare.scenario = keys[0];
     const twd = pfaTableCurrency === 'TWD' && pfaCompare.rate > 0;
     const money = v => (v === null || v === undefined) ? '—' : (twd ? '' : 'US$ ') + Math.round(twd ? v * pfaCompare.rate : v).toLocaleString('zh-TW');
     const rowsOf = d => (d.tables && d.tables[pfaCompare.scenario] && d.tables[pfaCompare.scenario].rows) || [];
@@ -1138,12 +1186,14 @@
       }).join('')}</tr>`;
     };
 
-    const scenarios = PFA_SCENARIO_ORDER.map(key => {
+    const scenarios = keys.map(key => {
       const any = cols.find(c => ok(c) && c.d.tables && c.d.tables[key]);
-      return `<button class="scenario-tab ${key === pfaCompare.scenario ? 'active' : ''}" data-key="${key}">${any ? any.d.tables[key].label : key}</button>`;
+      const label = isUL ? (key === 'declared' ? '目前宣告利率' : '宣告利率降低 1%') : any.d.tables[key].label;
+      return `<button class="scenario-tab ${key === pfaCompare.scenario ? 'active' : ''}" data-key="${key}">${label}</button>`;
     }).join('');
+    const missing = [...new Set(cols.filter(c => ok(c) && !(c.d.tables && c.d.tables[pfaCompare.scenario])).map(c => c.p.code))];
 
-    const head = `<tr><th></th>${cols.map(c => `<th class="pc-colhead"><div class="code">${c.p.code}</div><div class="nm">${c.p.fullName || ''}</div><div class="ty">${pcTypeLabel(c.p)}</div></th>`).join('')}</tr>`;
+    const head = `<tr><th></th>${cols.map(c => `<th class="pc-colhead"><div class="code">${c.p.code}</div><div class="nm">${c.p.fullName || ''}</div><div class="ty">${c.v.label}</div></th>`).join('')}</tr>`;
     const errRow = cols.some(c => !ok(c))
       ? `<tr class="pc-errrow"><th>試算狀態</th>${cols.map(c => ok(c) ? '<td>✓</td>' : `<td class="na">無法試算<br><small>${csEsc(c.d.error)}</small></td>`).join('')}</tr>` : '';
 
@@ -1161,13 +1211,13 @@
         const r = rowsOf(c.d).find(r => val(r, 'cash') !== null && r.cum_premium && val(r, 'cash') >= r.cum_premium);
         return r ? { n: -Math.round(r.policy_year), html: `第 ${Math.round(r.policy_year)} 年<br><small>${Math.round(r.age)} 歲</small>` } : { html: '未回本' };
       }, { cls: 'pc-key' }),
-      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? '<span class="grp">解約總金額（含紅利）</span>' : ''}第 ${yr} 年`, c => {
+      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? `<span class="grp">解約總金額（${bonusWord}）</span>` : ''}第 ${yr} 年`, c => {
         const v = at(c.d, yr, 'cash');
         if (v === null || v === undefined) return null;
         const pct = Math.round(v / pcPaidUsd(c.d.premiums) * 100);
         return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${pct}%</small>` };
       }, { cls: i === 0 ? 'pc-grp' : '' })),
-      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? '<span class="grp">身故總金額（含紅利）</span>' : ''}第 ${yr} 年`, c => {
+      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? `<span class="grp">身故總金額（${bonusWord}）</span>` : ''}第 ${yr} 年`, c => {
         const v = at(c.d, yr, 'death');
         if (v === null || v === undefined) return null;
         return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${(v / pcPaidUsd(c.d.premiums)).toFixed(1)} 倍</small>` };
@@ -1180,8 +1230,11 @@
         <button class="pfa-currency-btn ${twd ? 'active' : ''}" id="pc-currency">${twd ? '顯示美元' : `換算新台幣<small>${pfaCompare.date ? pfaCompare.date + ' ' : ''}匯率 ${pfaCompare.rate}</small>`}</button>
       </div>
       <div class="scenario-tabs pc-scen">${scenarios}</div>
+      ${missing.length ? `<div class="pc-note">${missing.join('、')} 的官方試算表未提供此情境（只有目前宣告利率），該欄顯示「—」。</div>` : ''}
       <div class="pc-table-wrap"><table class="pc-table">${head}${body}</table></div>
-      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證，實際以保單條款及建議書為準。${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
+      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isUL
+        ? '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依所選宣告利率情境累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證，實際以保單條款及建議書為準。'
+        : '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證，實際以保單條款及建議書為準。'}${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
     `;
     out.querySelectorAll('.pc-scen .scenario-tab').forEach(t => t.addEventListener('click', () => {
       pfaCompare.scenario = t.dataset.key; pcRenderResult();
@@ -1198,12 +1251,49 @@
   const pfaRate = { value: null, date: '', info: '載入即時匯率中…', loaded: false, failed: false };
   let pfaLastCalc = { rate: null, term: null, date: '' };
 
-  function pfaIsSingle(product) { return (product.freqOptions || [])[0] === '躉繳'; }
+  // 是否為躉繳：只有躉繳的商品固定 true；可選躉繳或分期的商品（FBX）依目前繳別
+  function pfaIsSingle(product) {
+    if (product.mixedSingle) {
+      const el = document.getElementById('pfa-payment-freq');
+      return el ? el.value === '躉繳' : true;
+    }
+    return (product.freqOptions || []).length === 1 && product.freqOptions[0] === '躉繳';
+  }
+  // 目前選定的繳費年期：多年期商品取下拉選單；FBX 躉繳=1、分期=2；其餘為商品固定年期
+  function pfaTerm(product) {
+    if (product.termOptions) {
+      const el = document.getElementById('pfa-term');
+      return el ? Number(el.value) : product.termOptions[0];
+    }
+    if (product.mixedSingle) return pfaIsSingle(product) ? 1 : product.paymentTerm;
+    return product.paymentTerm;
+  }
+  // FBX 切換躉繳／分期時，同步年期顯示、試算依據選項與標籤
+  function pfaSyncTermUI(product) {
+    const single = pfaIsSingle(product);
+    const disp = document.getElementById('pfa-term-display');
+    if (disp) disp.value = `${single ? '躉繳（一次繳清）' : pfaTerm(product) + ' 年期'}（${product.code}）`;
+    const totalPill = document.querySelector('.radio-pill[data-value="total_twd"]');
+    if (totalPill) {
+      totalPill.style.display = single ? 'none' : '';
+      if (single && totalPill.classList.contains('active')) {
+        document.querySelector('.radio-pill[data-value="annual_twd"]').click();
+      }
+    }
+    ['pfa-mode-annual-label', 'pfa-annual-label'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = single ? '躉繳保費' : '年繳保費';
+    });
+    const total = document.getElementById('pfa-total-twd');
+    if (total && !total.dataset.touched) total.value = 30 * pfaTerm(product);
+    pfaUpdateConversion();
+    if (typeof dvUpdateAge === 'function') dvUpdateAge();
+  }
 
   // 依試算依據換算成美元年繳保費（元，取整數）
   function pfaAnnualUsd(product, mode, rate) {
     const annualTwdWan = mode === 'total_twd'
-      ? Number(document.getElementById('pfa-total-twd').value) / product.paymentTerm
+      ? Number(document.getElementById('pfa-total-twd').value) / pfaTerm(product)
       : Number(document.getElementById('pfa-annual-twd').value);
     return Math.round(annualTwdWan * 10000 / rate);
   }
@@ -1225,8 +1315,8 @@
     const rateLabel = `（${rate === pfaRate.value && pfaRate.date ? pfaRate.date + ' ' : ''}匯率 ${rate}）`;
     if (a) a.textContent = `≈ ${usd(pfaAnnualUsd(p, 'annual_twd', rate))}${unit}${rateLabel}`;
     if (t) {
-      const per = Number(document.getElementById('pfa-total-twd').value) / p.paymentTerm;
-      t.textContent = `÷ ${p.paymentTerm} 年 = 年繳 ${Math.round(per * 100) / 100} 萬台幣 ≈ ${usd(pfaAnnualUsd(p, 'total_twd', rate))}／年${rateLabel}`;
+      const per = Number(document.getElementById('pfa-total-twd').value) / pfaTerm(p);
+      t.textContent = `÷ ${pfaTerm(p)} 年 = 年繳 ${Math.round(per * 100) / 100} 萬台幣 ≈ ${usd(pfaAnnualUsd(p, 'total_twd', rate))}／年${rateLabel}`;
     }
   }
 
@@ -1294,7 +1384,9 @@
         <div class="form-grid">
           <div class="field">
             <label>主約繳費年期</label>
-            <input type="text" value="${(product.freqOptions || [])[0] === '躉繳' ? '躉繳（一次繳清）' : product.paymentTerm + ' 年期'}（${product.code}）" disabled style="background:#f0f0f2;color:#86868b;">
+            ${product.termOptions
+              ? `<select id="pfa-term">${product.termOptions.map(t => `<option value="${t}">${t} 年期</option>`).join('')}</select>`
+              : `<input type="text" id="pfa-term-display" value="${pfaIsSingle(product) ? '躉繳（一次繳清）' : product.paymentTerm + ' 年期'}（${product.code}）" disabled style="background:#f0f0f2;color:#86868b;">`}
           </div>
           <div class="field">
             <label>繳別</label>
@@ -1303,25 +1395,25 @@
             </select>
           </div>
         </div>
-        <div class="field-note">${opts.skipInsured ? '' : `${product.fullName ? `富邦人壽${product.fullName}（美元）・` : ''}投保年齡：${product.ageHint || '依商品規定'}・`}保額 2 萬起（上限依投保年齡）</div>
+        <div class="field-note">${opts.skipInsured ? '' : `${product.fullName ? `富邦人壽${product.fullName}（美元）・` : ''}投保年齡：${product.ageHint || '依商品規定'}・`}保額 ${product.faceMinWan ?? 2} 萬起（上限依投保年齡）</div>
         <div class="field" style="margin-top:14px;">
           <label>試算依據</label>
           <div class="radio-group" data-target="pfa-input-mode">
-            <div class="radio-pill active" data-value="annual_twd">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</div>
-            ${pfaIsSingle(product) ? '' : '<div class="radio-pill" data-value="total_twd">總繳保費</div>'}
+            <div class="radio-pill active" data-value="annual_twd"><span id="pfa-mode-annual-label">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</span></div>
+            <div class="radio-pill" data-value="total_twd" ${pfaIsSingle(product) ? 'style="display:none;"' : ''}>總繳保費</div>
             <div class="radio-pill" data-value="face_amount">保額</div>
           </div>
           <input type="hidden" id="pfa-input-mode" value="annual_twd">
         </div>
         <div class="form-grid" style="margin-top:14px;">
           <div class="field pfa-mode-field" data-mode="annual_twd">
-            <label>${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}（萬元・台幣，未折扣前）</label>
+            <label><span id="pfa-annual-label">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</span>（萬元・台幣，未折扣前）</label>
             <input type="number" id="pfa-annual-twd" value="30" min="0" step="0.1">
             <div class="field-note" id="pfa-conv-annual"></div>
           </div>
           <div class="field pfa-mode-field" data-mode="total_twd" style="display:none;">
             <label>總繳保費（萬元・台幣，未折扣前）</label>
-            <input type="number" id="pfa-total-twd" value="${30 * product.paymentTerm}" min="0" step="0.1">
+            <input type="number" id="pfa-total-twd" value="${30 * (product.termOptions ? product.termOptions[0] : product.paymentTerm)}" min="0" step="0.1">
             <div class="field-note" id="pfa-conv-total"></div>
           </div>
           <div class="field pfa-mode-field" data-mode="face_amount" style="display:none;">
@@ -1351,8 +1443,15 @@
       </div>
 
       <details class="advanced">
-        <summary>進階選項（要保人關係／保費折扣／身故給付分期）</summary>
+        <summary>進階選項（要保人關係／保費折扣／身故給付分期${product.tableType === 'UL' ? '／增值回饋分享金' : ''}）</summary>
         <div class="form-grid">
+          ${product.tableType === 'UL' ? `<div class="field">
+            <label>增值回饋分享金給付方式</label>
+            <select id="pfa-bonus-method">
+              <option value="儲存生息">儲存生息</option>
+              <option value="購買增額繳清保險金額">購買增額繳清保險金額</option>
+            </select>
+          </div>` : ''}
           <div class="field">
             <label>要保人與被保險人關係</label>
             <select id="pfa-relationship">
@@ -1443,9 +1542,10 @@
       birth_year: Number(birthYear),
       birth_month: Number(birthMonth),
       birth_day: Number(birthDay),
-      payment_term: product.paymentTerm,
+      payment_term: pfaTerm(product),
       payment_freq: document.getElementById('pfa-payment-freq').value,
       dividend_scenario: document.getElementById('pfa-dividend-scenario').value,
+      bonus_method: (document.getElementById('pfa-bonus-method') || {}).value,
       input_mode: inputMode,
       relationship: document.getElementById('pfa-relationship').value,
       discount: document.getElementById('pfa-discount').value,
@@ -1472,7 +1572,8 @@
       payload.input_mode = 'premium';
       payload.premium_amount = annualUsd;
     }
-    pfaLastCalc = { rate: rate > 0 ? rate : null, term: product.paymentTerm, date: rate === pfaRate.value ? pfaRate.date : '' };
+    pfaLastCalc = { rate: rate > 0 ? rate : null, term: pfaTerm(product), date: rate === pfaRate.value ? pfaRate.date : '' };
+    pfaCurrentProduct = product;
 
     btn.disabled = true;
     loadingEl.style.display = 'block';
@@ -1499,6 +1600,21 @@
   }
 
   const PFA_SCENARIO_ORDER = ['most_likely', 'lower', 'zero_possible'];
+  // 分紅商品三種紅利情境；利變型為兩種宣告利率情境（FBM 只有目前宣告利率）
+  function pfaScenarioKeys(tables) {
+    return [...PFA_SCENARIO_ORDER, 'declared', 'declared_low'].filter(k => tables && tables[k]);
+  }
+  let pfaCurrentProduct = null;
+  const UL_TABLE_COLUMNS = [
+    { key: 'policy_year', label: '保單年度' },
+    { key: 'age', label: '保險年齡' },
+    { key: 'annual_premium', label: '年度保費' },
+    { key: 'cum_premium', label: '累計保費' },
+    { key: 'total_death_benefit', label: '身故總金額' },
+    { key: 'total_cash_value', label: '解約總金額' },
+    { key: 'annual_dividend', label: '增值回饋分享金' },
+    { key: 'total_amount', label: '保險金額' },
+  ];
   const PFA_TABLE_COLUMNS = [
     { key: 'policy_year', label: '保單年度' },
     { key: 'age', label: '保險年齡' },
@@ -1544,7 +1660,7 @@
     }
 
     const tabsEl = document.getElementById('pfa-scenario-tabs');
-    tabsEl.innerHTML = PFA_SCENARIO_ORDER.map((key, i) => {
+    tabsEl.innerHTML = pfaScenarioKeys(data.tables).map((key, i) => {
       const t = data.tables[key];
       return `<button class="scenario-tab ${i === 0 ? 'active' : ''}" data-key="${key}">${t ? t.label : key}</button>`;
     }).join('');
@@ -1571,7 +1687,7 @@
         renderPFATable(data.tables[tab.dataset.key]);
       });
     });
-    renderPFATable(data.tables[PFA_SCENARIO_ORDER[0]]);
+    renderPFATable(data.tables[pfaScenarioKeys(data.tables)[0]]);
 
     const downloadBtn = document.getElementById('pfa-download-btn');
     if (data.pdf_base64) {
@@ -1599,10 +1715,11 @@
     const unit = twd ? '（台幣）' : '（美元）';
     const money = v => (v === null || v === undefined || v === '') ? '—'
       : Math.round(twd ? v * pfaLastCalc.rate : v).toLocaleString('zh-TW');
-    const head = '<tr>' + PFA_TABLE_COLUMNS.map(c =>
+    const columns = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL' ? UL_TABLE_COLUMNS : PFA_TABLE_COLUMNS;
+    const head = '<tr>' + columns.map(c =>
       `<th>${c.label}${c.key === 'policy_year' || c.key === 'age' ? '' : `<br><small>${unit}</small>`}</th>`).join('') + '</tr>';
     const body = tableData.rows.map(row =>
-      '<tr>' + PFA_TABLE_COLUMNS.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : money(row[c.key])}</td>`).join('') + '</tr>'
+      '<tr>' + columns.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : money(row[c.key])}</td>`).join('') + '</tr>'
     ).join('');
     tableEl.innerHTML = head + body;
     const btn = document.getElementById('pfa-currency-btn');
