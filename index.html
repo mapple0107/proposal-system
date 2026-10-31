@@ -1188,7 +1188,7 @@
 
     const scenarios = keys.map(key => {
       const any = cols.find(c => ok(c) && c.d.tables && c.d.tables[key]);
-      const label = isUL ? (key === 'declared' ? '目前宣告利率' : '宣告利率降低 1%') : any.d.tables[key].label;
+      const label = any.d.tables[key].label;
       return `<button class="scenario-tab ${key === pfaCompare.scenario ? 'active' : ''}" data-key="${key}">${label}</button>`;
     }).join('');
     const missing = [...new Set(cols.filter(c => ok(c) && !(c.d.tables && c.d.tables[pfaCompare.scenario])).map(c => c.p.code))];
@@ -1233,7 +1233,7 @@
       ${missing.length ? `<div class="pc-note">${missing.join('、')} 的官方試算表未提供此情境（只有目前宣告利率），該欄顯示「—」。</div>` : ''}
       <div class="pc-table-wrap"><table class="pc-table">${head}${body}</table></div>
       <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isUL
-        ? '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依所選宣告利率情境累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證，實際以保單條款及建議書為準。'
+        ? '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依目前宣告利率累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證，實際以保單條款及建議書為準。'
         : '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證，實際以保單條款及建議書為準。'}${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
     `;
     out.querySelectorAll('.pc-scen .scenario-tab').forEach(t => t.addEventListener('click', () => {
@@ -1600,9 +1600,9 @@
   }
 
   const PFA_SCENARIO_ORDER = ['most_likely', 'lower', 'zero_possible'];
-  // 分紅商品三種紅利情境；利變型為兩種宣告利率情境（FBM 只有目前宣告利率）
+  // 分紅商品三種紅利情境；利變型只有目前宣告利率（與正式建議書一致）
   function pfaScenarioKeys(tables) {
-    return [...PFA_SCENARIO_ORDER, 'declared', 'declared_low'].filter(k => tables && tables[k]);
+    return [...PFA_SCENARIO_ORDER, 'declared'].filter(k => tables && tables[k]);
   }
   let pfaCurrentProduct = null;
   const UL_TABLE_COLUMNS = [
