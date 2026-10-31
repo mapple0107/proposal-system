@@ -672,19 +672,9 @@
       ]
     },
     {
-      name: "長照/失智險",
-      icon: "🩺",
-      products: [
-        { code: "LTS", status: "ready", calcType: "LTS", apiProduct: "LTS" },
-        { code: "LTQ", status: "ready", calcType: "LTQT", apiProduct: "LTQ",
-          ageHint: "10年期 15足歲～70歲；20年期 15足歲～60歲；30年期 15足歲～50歲" },
-        { code: "LTT", status: "ready", calcType: "LTQT", apiProduct: "LTT",
-          ageHint: "10年期 15足歲～65歲；20年期 15足歲～55歲；30年期 15足歲～45歲" },
-        { code: "LTP", status: "ready", calcType: "LTQT", apiProduct: "LTP",
-          ageHint: "10年期 15足歲～65歲；20年期 15足歲～60歲；30年期 15足歲～50歲",
-          faceAmountDefault: 100, faceAmountMin: 30, faceAmountStep: 1,
-          faceRangeHint: "保額範圍：30 ~ 300 萬（實際上限依投保年齡可能調整，66歲以上不得承保）" },
-      ]
+      name: "利變型保單",
+      icon: "📈",
+      products: []
     },
     {
       name: "重大傷病險",
@@ -747,6 +737,21 @@
           faceMin: 50, faceMax: 500, faceTicks: [50, 100, 200, 300, 400, 500], tableLayout: 'CI' },
       ]
     },
+    {
+      name: "長照/失智險",
+      icon: "🩺",
+      products: [
+        { code: "LTS", status: "ready", calcType: "LTS", apiProduct: "LTS" },
+        { code: "LTQ", status: "ready", calcType: "LTQT", apiProduct: "LTQ",
+          ageHint: "10年期 15足歲～70歲；20年期 15足歲～60歲；30年期 15足歲～50歲" },
+        { code: "LTT", status: "ready", calcType: "LTQT", apiProduct: "LTT",
+          ageHint: "10年期 15足歲～65歲；20年期 15足歲～55歲；30年期 15足歲～45歲" },
+        { code: "LTP", status: "ready", calcType: "LTQT", apiProduct: "LTP",
+          ageHint: "10年期 15足歲～65歲；20年期 15足歲～60歲；30年期 15足歲～50歲",
+          faceAmountDefault: 100, faceAmountMin: 30, faceAmountStep: 1,
+          faceRangeHint: "保額範圍：30 ~ 300 萬（實際上限依投保年齡可能調整，66歲以上不得承保）" },
+      ]
+    },
   ];
 
   let currentModuleIndex = null;
@@ -804,14 +809,14 @@
       return;
     }
     document.getElementById('module-title').textContent = mod.name;
-    document.getElementById('module-subtitle').textContent = `共 ${mod.products.length} 項商品`;
+    document.getElementById('module-subtitle').textContent = mod.products.length ? `共 ${mod.products.length} 項商品` : '商品建置中';
     const listEl = document.getElementById('product-list');
     listEl.innerHTML = mod.products.map((p, i) => `
       <div class="product-row" onclick="showProduct(${index}, ${i})">
         <span class="product-code">${p.code}${p.genderLabel ? ` <span style="font-weight:400;color:#86868b;">${p.genderLabel}</span>` : ''}</span>
         ${p.status === 'ready' ? '' : `<span class="product-status ${p.status}">尚未建置</span>`}
       </div>
-    `).join('');
+    `).join('') || '<div class="placeholder-box">此分類的商品建置中。上傳商品的官方建議書 Excel 後，這裡會列出可試算的商品。</div>';
     switchView('view-module');
   }
 
@@ -2861,7 +2866,7 @@
       <div class="module-icon">${mod.icon}</div>
       <div class="module-info">
         <div class="module-name">${mod.name}</div>
-        <div class="module-count">${mod.products.length} 項商品</div>
+        <div class="module-count">${mod.products.length ? `${mod.products.length} 項商品` : '即將推出'}</div>
       </div>
       <div class="module-arrow">›</div>
     </div>
