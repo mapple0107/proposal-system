@@ -199,6 +199,7 @@
   #pfa-result-table td.ratio { font-weight: 700; color: #1e3a8a; }
   #pfa-result-table td.ratio.pos { color: #157a3a; }
   #pfa-result-table td.ratio.neg { color: #c0392b; }
+  #pfa-result-table td.gain { color: #157a3a; font-weight: 700; }
   .pfa-ratio-note { margin-top: 8px; font-size: 12px; line-height: 1.6; color: #7b8494; }
   /* ---------- 保額型分紅：比較商品 ---------- */
   .pfa-compare-btn { background: #fff; }
@@ -1622,6 +1623,7 @@
     { key: 'cum_premium', label: '累計實繳保費' },
     { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
     { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
+    { key: 'surrender_gain', label: '解約獲利', calc: true },
   ];
   const PFA_TABLE_COLUMNS = [
     { key: 'policy_year', label: '保單年度' },
@@ -1629,6 +1631,7 @@
     { key: 'cum_premium', label: '累計實繳保費' },
     { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
     { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
+    { key: 'surrender_gain', label: '解約獲利', calc: true },
   ];
 
   function fmtNum(v) {
@@ -1741,18 +1744,27 @@
       const death = row.total_death_benefit ?? row.death_benefit;
       const cum = row.cum_premium;
       const ret = (cash !== null && cum) ? (cash - cum) / cum : null;
-      const prot = (death !== null && faceUsd) ? death / faceUsd : null;
+      const prot = (death !== null && cum) ? death / cum : null;
       // 增值率＝本年度解約總金額 ÷ 前一年度解約總金額
       const grow = (cash !== null && prevCash) ? cash / prevCash : null;
       return `<td class="ratio ${ret !== null && ret >= 0 ? 'pos' : ''}">${ret === null ? '—' : ret < 0 ? '' : pct(ret)}</td>`
-        + `<td class="ratio">${prot === null ? '—' : prot.toFixed(2) + ' 倍'}</td>`
+        + `<td class="ratio">${prot === null ? '—' : (prot * 100).toFixed(1) + '%'}</td>`
         + `<td class="ratio">${grow === null ? '—' : (grow * 100).toFixed(1) + '%'}</td>`;
     };
     const ratioHead = showRatio
-      ? `<th class="ratio">報酬率<br><small>(解約−累計)÷累計</small></th><th class="ratio">保障比<br><small>身故÷保額</small></th><th class="ratio">增值率<br><small>本年÷前一年解約</small></th>`
+      ? `<th class="ratio">報酬率<br><small>(解約−累計)÷累計</small></th><th class="ratio">保障比<br><small>身故÷累計保費</small></th><th class="ratio">增值率<br><small>本年÷前一年解約</small></th>`
       : '';
     const body = tableData.rows.map((row, i) =>
-      '<tr>' + columns.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : money(row[c.key] ?? (c.fallback ? row[c.fallback] : null))}</td>`).join('')
+      '<tr>' + columns.map(c => {
+        if (c.key === 'policy_year' || c.key === 'age') return `<td>${row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])}</td>`;
+        if (c.key === 'surrender_gain') {
+          // 解約獲利＝解約時可領總金額 − 累計實繳保費，尚未獲利（≤0）時留白
+          const cash = row.total_cash_value ?? row.cash_value;
+          const gain = (cash !== null && cash !== undefined && row.cum_premium) ? cash - row.cum_premium : null;
+          return `<td class="gain">${gain !== null && gain > 0 ? money(gain) : ''}</td>`;
+        }
+        return `<td>${money(row[c.key] ?? (c.fallback ? row[c.fallback] : null))}</td>`;
+      }).join('')
       + (showRatio ? ratioCells(row, tableData.rows[i - 1]) : '') + '</tr>'
     ).join('');
     tableEl.innerHTML = head.replace(/<\/tr>$/, ratioHead + '</tr>') + body;
@@ -1760,7 +1772,7 @@
     if (note) {
       const isUL = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL';
       note.textContent = showRatio
-        ? `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算，增值率＝本年度÷前一年度解約總金額；保額為基本保額 ${faceUsd ? Math.round(faceUsd).toLocaleString('en-US') : '—'} 美元。`
+        ? `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算：保障比＝身故總金額÷累計實繳保費，增值率＝本年度÷前一年度解約總金額。解約獲利＝解約總金額−累計實繳保費（尚未獲利時留白）。`
         : '報酬率、保障比、增值率以中分紅（最可能紅利）計算，請切換至「最可能紅利」查看。';
     }
     const btn = document.getElementById('pfa-currency-btn');
