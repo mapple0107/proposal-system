@@ -510,7 +510,7 @@
   .dv-f .radio-group { height: 52px; }
   .dv-f .radio-pill { display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 16px; }
   .dv-f .radio-pill.active { background: var(--cs-accent); border-color: var(--cs-accent); }
-  .dv-tabs { grid-template-columns: repeat(var(--n, 7), 1fr); max-width: none; margin: 24px 0 26px; }
+  .dv-tabs { grid-template-columns: repeat(var(--n, 7), 1fr); row-gap: 6px; max-width: none; margin: 24px 0 26px; }
   .dv-tabs .cs-tab .code { font-size: 18px; }
   .dv-product .cs-head { margin-bottom: 6px; }
   .dv-product .cs-code { font-size: 48px; }
@@ -931,7 +931,8 @@
   function renderDividendProduct() {
     const mod = MODULES[dv.moduleIndex];
     const p = mod.products[dv.productIndex];
-    document.getElementById('dv-tabs').style.setProperty('--n', mod.products.length);
+    // 商品超過 5 個時分成兩行排列，避免標籤擠在一起
+    document.getElementById('dv-tabs').style.setProperty('--n', mod.products.length > 5 ? Math.ceil(mod.products.length / 2) : mod.products.length);
     document.getElementById('dv-tabs').innerHTML = mod.products.map((x, i) => `
       <button class="cs-tab ${i === dv.productIndex ? 'active' : ''}" onclick="switchDividendProduct(${i})">
         <span class="code">${x.code}</span>
