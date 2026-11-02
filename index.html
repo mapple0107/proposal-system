@@ -1740,30 +1740,33 @@
     const showRatio = RATIO_SCENARIOS.includes(pfaCurrentTableKey);
     const faceUsd = pfaLastResultForRatio ? pfaLastResultForRatio.premiums.final_face_amount_wan * 10000 : null;
     const pct = v => `${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
-    const ratioCells = row => {
-      const cash = row.total_cash_value ?? row.cash_value;
+    const cashOf = r => r ? (r.total_cash_value ?? r.cash_value) : null;
+    const ratioCells = (row, prev) => {
+      const cash = cashOf(row);
+      const prevCash = cashOf(prev);
       const death = row.total_death_benefit ?? row.death_benefit;
       const cum = row.cum_premium;
       const ret = (cash !== null && cum) ? (cash - cum) / cum : null;
       const prot = (death !== null && faceUsd) ? death / faceUsd : null;
-      const grow = (cash !== null && cum) ? cash / cum : null;
+      // 增值率＝本年度解約總金額 ÷ 前一年度解約總金額
+      const grow = (cash !== null && prevCash) ? cash / prevCash : null;
       return `<td class="ratio ${ret === null ? '' : ret >= 0 ? 'pos' : 'neg'}">${ret === null ? '—' : pct(ret)}</td>`
         + `<td class="ratio">${prot === null ? '—' : prot.toFixed(2) + ' 倍'}</td>`
         + `<td class="ratio">${grow === null ? '—' : (grow * 100).toFixed(1) + '%'}</td>`;
     };
     const ratioHead = showRatio
-      ? `<th class="ratio">報酬率<br><small>(解約−累計)÷累計</small></th><th class="ratio">保障比<br><small>身故÷保額</small></th><th class="ratio">增值率<br><small>解約÷累計</small></th>`
+      ? `<th class="ratio">報酬率<br><small>(解約−累計)÷累計</small></th><th class="ratio">保障比<br><small>身故÷保額</small></th><th class="ratio">增值率<br><small>本年÷前一年解約</small></th>`
       : '';
-    const body = tableData.rows.map(row =>
+    const body = tableData.rows.map((row, i) =>
       '<tr>' + columns.map(c => `<td>${c.key === 'policy_year' || c.key === 'age' ? (row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])) : money(row[c.key])}</td>`).join('')
-      + (showRatio ? ratioCells(row) : '') + '</tr>'
+      + (showRatio ? ratioCells(row, tableData.rows[i - 1]) : '') + '</tr>'
     ).join('');
     tableEl.innerHTML = head.replace(/<\/tr>$/, ratioHead + '</tr>') + body;
     const note = document.getElementById('pfa-ratio-note');
     if (note) {
       const isUL = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL';
       note.textContent = showRatio
-        ? `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算；保額為基本保額 ${faceUsd ? Math.round(faceUsd).toLocaleString('en-US') : '—'} 美元。表中「身故保障、解約金」欄為不含紅利的保證金額。`
+        ? `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算，增值率＝本年度÷前一年度解約總金額；保額為基本保額 ${faceUsd ? Math.round(faceUsd).toLocaleString('en-US') : '—'} 美元。表中「身故保障、解約金」欄為不含紅利的保證金額。`
         : '報酬率、保障比、增值率以中分紅（最可能紅利）計算，請切換至「最可能紅利」查看。';
     }
     const btn = document.getElementById('pfa-currency-btn');
