@@ -1750,7 +1750,7 @@
       const prot = (death !== null && faceUsd) ? death / faceUsd : null;
       // 增值率＝本年度解約總金額 ÷ 前一年度解約總金額
       const grow = (cash !== null && prevCash) ? cash / prevCash : null;
-      return `<td class="ratio ${ret === null ? '' : ret >= 0 ? 'pos' : 'neg'}">${ret === null ? '—' : pct(ret)}</td>`
+      return `<td class="ratio ${ret !== null && ret >= 0 ? 'pos' : ''}">${ret === null ? '—' : ret < 0 ? '' : pct(ret)}</td>`
         + `<td class="ratio">${prot === null ? '—' : prot.toFixed(2) + ' 倍'}</td>`
         + `<td class="ratio">${grow === null ? '—' : (grow * 100).toFixed(1) + '%'}</td>`;
     };
