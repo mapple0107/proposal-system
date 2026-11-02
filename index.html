@@ -1619,22 +1619,16 @@
   const UL_TABLE_COLUMNS = [
     { key: 'policy_year', label: '保單年度' },
     { key: 'age', label: '保險年齡' },
-    { key: 'annual_premium', label: '年度保費' },
-    { key: 'cum_premium', label: '累計保費' },
-    { key: 'total_death_benefit', label: '身故總金額' },
-    { key: 'total_cash_value', label: '解約總金額' },
-    { key: 'annual_dividend', label: '增值回饋分享金' },
-    { key: 'total_amount', label: '保險金額' },
+    { key: 'cum_premium', label: '累計實繳保費' },
+    { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
+    { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
   ];
   const PFA_TABLE_COLUMNS = [
     { key: 'policy_year', label: '保單年度' },
     { key: 'age', label: '保險年齡' },
-    { key: 'annual_premium', label: '年度保費' },
-    { key: 'cum_premium', label: '累計保費' },
-    { key: 'total_death_benefit', fallback: 'death_benefit', label: '身故總金額' },
-    { key: 'total_cash_value', fallback: 'cash_value', label: '解約總金額' },
-    { key: 'annual_dividend', label: '年度紅利' },
-    { key: 'total_amount', label: '總保額' },
+    { key: 'cum_premium', label: '累計實繳保費' },
+    { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
+    { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
   ];
 
   function fmtNum(v) {
