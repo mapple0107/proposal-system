@@ -1942,6 +1942,11 @@
           return `<td class="gain">${gain !== null && gain > 0 ? money(gain) : ''}</td>`;
         }
         if (c.blankZero && !row[c.key]) return '<td></td>';
+        if (c.key === 'total_cash_value') {
+          // 解約金只顯示回本後的年度（解約總金額 ≥ 累計實繳保費；退休商品含已領生存金）
+          const tot = cashOf(row);
+          if (tot === null || tot === undefined || !row.cum_premium || tot < row.cum_premium) return '<td></td>';
+        }
         return `<td class="${c.blankZero ? 'surv' : ''}">${money(row[c.key] ?? (c.fallback ? row[c.fallback] : null))}</td>`;
       }).join('')
       + (showRatio ? ratioCells(row, tableData.rows[i - 1]) : '') + '</tr>'
@@ -1952,8 +1957,8 @@
       const isUL = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL';
       note.textContent = showRatio
         ? (isRet
-          ? '生存保險金於保單週年日（被保險人到達約定年齡起）每年給付，列在該保單年度（保險年齡為年度初年齡），金額含中分紅紅利增加的部分。報酬率、解約獲利、增值率以「年度末解約時可領總金額＋累計已領生存保險金」計算（即解約時實際拿回的總金額）；保障比＝身故總金額÷累計實繳保費。'
-          : `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算：保障比＝身故總金額÷累計實繳保費，增值率＝（本年度−前一年度解約總金額）÷前一年度解約總金額，即當年度的單利增值率。解約獲利＝解約總金額−累計實繳保費（尚未獲利時留白）。`)
+          ? '生存保險金於保單週年日（被保險人到達約定年齡起）每年給付，列在該保單年度（保險年齡為年度初年齡），金額含中分紅紅利增加的部分。報酬率、解約獲利、增值率以「年度末解約時可領總金額＋累計已領生存保險金」計算（即解約時實際拿回的總金額）；保障比＝身故總金額÷累計實繳保費。解約金欄位只顯示回本後的年度。'
+          : `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算：保障比＝身故總金額÷累計實繳保費，增值率＝（本年度−前一年度解約總金額）÷前一年度解約總金額，即當年度的單利增值率。解約獲利＝解約總金額−累計實繳保費（尚未獲利時留白）。解約金欄位只顯示回本後的年度。`)
         : '報酬率、保障比、增值率以中分紅（最可能紅利）計算，請切換至「最可能紅利」查看。';
     }
     const btn = document.getElementById('pfa-currency-btn');
