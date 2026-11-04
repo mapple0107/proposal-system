@@ -591,7 +591,7 @@
 
     <!-- 頂部品牌列 -->
     <div style="display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
-      <img src="avatar.png" alt="頭像" style="width:112px; height:112px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.15);">
+      <img src="avatar.png" alt="頭像" onload="fitHome()" style="width:112px; height:112px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.15);">
     </div>
 
     <!-- 首頁：模組列表 -->
@@ -829,6 +829,7 @@
   if (sessionStorage.getItem('proposalSystemUnlocked') === '1') {
     document.getElementById('lock-screen').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
+    fitHome();
   }
 
   // ---------- 畫面切換 ----------
@@ -836,7 +837,26 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     window.scrollTo(0, 0);
+    fitHome();
   }
+
+  // 電腦版首頁：依視窗大小等比例放大，填滿畫面但不需捲動
+  function fitHome() {
+    const mc = document.getElementById('main-content');
+    const header = mc && mc.firstElementChild;
+    const home = document.getElementById('view-home');
+    if (!mc || !header || !home) return;
+    const parts = [header, home];
+    const reset = () => { parts.forEach(el => { el.style.zoom = ''; }); mc.style.maxWidth = ''; };
+    reset();
+    if (!home.classList.contains('active') || window.innerWidth < 900 || mc.style.display === 'none') return;
+    const w = mc.clientWidth;                        // 原始寬度（max 900）
+    const h = header.offsetHeight + home.offsetHeight + 24;  // 原始內容高度（含頭像下方間距）
+    const scale = Math.max(1, Math.min(window.innerWidth * 0.86 / w, window.innerHeight * 0.88 / h, 1.7));
+    mc.style.maxWidth = `${Math.round(900 * scale)}px`;
+    parts.forEach(el => { el.style.zoom = scale; });
+  }
+  window.addEventListener('resize', fitHome);
 
   function showHome() {
     currentModuleIndex = null;
@@ -3069,6 +3089,7 @@
       <div class="module-arrow">›</div>
     </div>
   `).join('');
+  fitHome();
 </script>
 
 </body>
