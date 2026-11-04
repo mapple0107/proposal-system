@@ -832,7 +832,16 @@
     {
       name: "歲滿期（依年紀開始領）",
       icon: "⏳",
-      products: []
+      products: [
+        { code: "PFVA~D", status: "ready", calcType: "PFA", apiProduct: "PFV", tableType: "RET",
+          fullName: "美年加鑫外幣分紅終身保險", termOptions: [2, 6], paymentTerm: 2,
+          retireOptions: [18, 25, 30, 35], retireDefault: 18, ageMaxRule: "retire-term",
+          ageHint: "0～33 歲（需在開始領取年齡前繳費期滿：投保年齡上限＝領取年齡−繳費年期）", faceDefault: 10, faceMinWan: 0.5 },
+        { code: "PFZA~B", status: "ready", calcType: "PFA", apiProduct: "PFZ", tableType: "RET",
+          fullName: "美滿豐年外幣分紅終身保險", paymentTerm: 6,
+          retireOptions: [40, 45], retireDefault: 40, ageMaxByRetire: { 40: 34, 45: 39 },
+          ageHint: "0～39 歲（40 歲領 34 歲、45 歲領 39 歲）", faceDefault: 10, faceMinWan: 0.5 },
+      ]
     },
   ];
 
@@ -1061,7 +1070,8 @@
     const r = calcInsuranceAndActualAge(y, m, d, new Date());
     if (!r) { el.textContent = '請確認生日是否正確'; el.className = 'cs-age warn'; return; }
     const p = MODULES[dv.moduleIndex].products[dv.productIndex];
-    const max = p.ageMaxByRetire ? p.ageMaxByRetire[pfaRetire(p)]
+    const max = p.ageMaxRule === 'retire-term' ? pfaRetire(p) - pfaTerm(p)
+      : p.ageMaxByRetire ? p.ageMaxByRetire[pfaRetire(p)]
       : p.ageMax ? p.ageMax[pfaTerm(p)] : Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
     const over = max && r.insuranceAge > max;
     el.textContent = `保險年齡 ${r.insuranceAge} 歲　實際年齡 ${r.actualAge} 歲` + (over ? `　（超過 ${p.code} 投保年齡上限 ${max} 歲）` : '');
@@ -1086,8 +1096,9 @@
   function pcModules() {
     const all = MODULES.filter(m => m.products.length && m.products.every(p => p.calcType === 'PFA'));
     // 退休規劃商品只和退休規劃商品比較；分紅與利變型可一起比較
-    const inRet = dv.moduleIndex !== null && pcIsRetModule(MODULES[dv.moduleIndex]);
-    return all.filter(m => pcIsRetModule(m) === inRet);
+    const cur = dv.moduleIndex !== null ? MODULES[dv.moduleIndex] : null;
+    if (cur && pcIsRetModule(cur)) return [cur];   // 退休規劃、歲滿期：只和同分類商品比較
+    return all.filter(m => !pcIsRetModule(m));
   }
   function pcProducts() { return pcModules().flatMap(m => m.products); }
   function pcCurrent() { return MODULES[dv.moduleIndex].products[dv.productIndex]; }
