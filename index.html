@@ -829,6 +829,11 @@
           ageHint: "0～45 歲（55 歲領 35 歲、60 歲領 40 歲、65 歲領 45 歲）", faceDefault: 10, faceMinWan: 0.5 },
       ]
     },
+    {
+      name: "歲滿期（依年紀開始領）",
+      icon: "⏳",
+      products: []
+    },
   ];
 
   let currentModuleIndex = null;
@@ -875,11 +880,15 @@
     const parts = [header, home];
     const reset = () => { parts.forEach(el => { el.style.zoom = ''; }); mc.style.maxWidth = ''; };
     reset();
-    if (!home.classList.contains('active') || window.innerWidth < 900 || mc.style.display === 'none') return;
+    if (!home.classList.contains('active') || mc.style.display === 'none') return;
     const w = mc.clientWidth;                        // 原始寬度（max 900）
     const h = header.offsetHeight + home.offsetHeight + 24;  // 原始內容高度（含頭像下方間距）
-    const scale = Math.max(1, Math.min(window.innerWidth * 0.86 / w, window.innerHeight * 0.88 / h, 1.7));
-    mc.style.maxWidth = `${Math.round(900 * scale)}px`;
+    // 依視窗大小等比例縮放，讓首頁剛好一頁：電腦版最多放大 1.7 倍，視窗太矮或手機放不下時縮小
+    const scale = window.innerWidth < 900
+      ? Math.min(1, window.innerHeight * 0.96 / h)
+      : Math.max(0.6, Math.min(window.innerWidth * 0.86 / w, window.innerHeight * 0.9 / h, 1.7));
+    if (scale === 1) return;
+    if (scale > 1) mc.style.maxWidth = `${Math.round(900 * scale)}px`;
     parts.forEach(el => { el.style.zoom = scale; });
   }
   window.addEventListener('resize', fitHome);
