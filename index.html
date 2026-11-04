@@ -225,6 +225,10 @@
   #pfa-result-table td.ratio.pos { color: #157a3a; }
   #pfa-result-table td.ratio.neg { color: #c0392b; }
   #pfa-result-table td.gain { color: #157a3a; font-weight: 700; }
+  #pfa-result-table td.surv { color: #b45309; font-weight: 700; }
+  .summary-tile.ret { background: #fff7ed; border-color: #fed7aa; }
+  .summary-tile.ret .value small { font-size: 12px; font-weight: 500; color: #9a6b3a; }
+  .summary-tile .note { margin-top: 4px; font-size: 12px; color: #9a6b3a; }
   .pfa-ratio-note { margin-top: 8px; font-size: 12px; line-height: 1.6; color: #7b8494; }
   /* ---------- 保額型分紅：比較商品 ---------- */
   .pfa-compare-btn { background: #fff; }
@@ -236,6 +240,8 @@
   .pc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .pc-group { margin: 12px 0 8px; font-size: 13px; font-weight: 700; color: #4a5568; }
   .pc-group:first-of-type { margin-top: 0; }
+  .pc-chip:disabled { opacity: .35; cursor: not-allowed; }
+  .pc-retire { margin-bottom: 14px; }
   .pc-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 104px; padding: 9px 12px; border-radius: 14px; border: 1.5px solid #d9e3f7; background: #fff; cursor: pointer; font-family: inherit; color: #2b3242; transition: all .15s; }
   .pc-chip b { font-size: 15px; font-weight: 800; }
   .pc-chip small { font-size: 11px; color: #7b8494; }
@@ -808,7 +814,20 @@
     {
       name: "退休規劃",
       icon: "🏖️",
-      products: []
+      products: [
+        { code: "PF55~65", status: "ready", calcType: "PFA", apiProduct: "PF5", tableType: "RET",
+          fullName: "美富優退外幣分紅終身保險", termOptions: [3, 6], paymentTerm: 3,
+          retireOptions: [55, 60, 65], retireDefault: 65, ageMaxByRetire: { 55: 49, 60: 54, 65: 59 },
+          ageHint: "0～59 歲（55 歲領 49 歲、60 歲領 54 歲、65 歲領 59 歲）", faceDefault: 10, faceMinWan: 0.5 },
+        { code: "PFWA~F", status: "ready", calcType: "PFA", apiProduct: "PFW", tableType: "RET",
+          fullName: "美好優退外幣分紅終身保險", paymentTerm: 6,
+          retireOptions: [50, 55, 60, 65, 70, 75], retireDefault: 65, ageMaxByRetire: { 50: 44, 55: 49, 60: 54, 65: 59, 70: 64, 75: 69 },
+          ageHint: "0～69 歲（需在開始領取年齡 6 年前投保）", faceDefault: 10, faceMinWan: 0.5 },
+        { code: "PFNA~C", status: "ready", calcType: "PFA", apiProduct: "PFN", tableType: "RET",
+          fullName: "紅運優外幣分紅終身保險", shortName: "紅運優", termOptions: [10, 20], paymentTerm: 10,
+          retireOptions: [55, 60, 65], retireDefault: 65, ageMaxByRetire: { 55: 35, 60: 40, 65: 45 },
+          ageHint: "0～45 歲（55 歲領 35 歲、60 歲領 40 歲、65 歲領 45 歲）", faceDefault: 10, faceMinWan: 0.5 },
+      ]
     },
   ];
 
@@ -993,7 +1012,7 @@
     document.getElementById('dv-tabs').innerHTML = mod.products.map((x, i) => `
       <button class="cs-tab ${i === dv.productIndex ? 'active' : ''}" onclick="switchDividendProduct(${i})">
         <span class="code">${x.code}</span>
-        <span class="sub"><span>${(x.fullName || '').slice(0, 4)}</span><span class="sep">・</span><span>${dvTypeLabel(x)}</span></span>
+        <span class="sub"><span>${x.shortName || (x.fullName || '').slice(0, 4)}</span><span class="sep">・</span><span>${dvTypeLabel(x)}</span></span>
       </button>`).join('');
     document.getElementById('dv-code').textContent = p.code;
     document.getElementById('dv-desc').textContent =
@@ -1013,6 +1032,8 @@
     });
     const termEl = document.getElementById('pfa-term');
     if (termEl) termEl.addEventListener('change', () => pfaSyncTermUI(p));
+    const retireEl = document.getElementById('pfa-retire');
+    if (retireEl) retireEl.addEventListener('change', dvUpdateAge);
     if (p.mixedSingle) {
       document.getElementById('pfa-payment-freq').addEventListener('change', () => pfaSyncTermUI(p));
       pfaSyncTermUI(p);   // 表單產生時欄位尚未在畫面上，產生後依實際繳別同步一次
@@ -1031,7 +1052,8 @@
     const r = calcInsuranceAndActualAge(y, m, d, new Date());
     if (!r) { el.textContent = '請確認生日是否正確'; el.className = 'cs-age warn'; return; }
     const p = MODULES[dv.moduleIndex].products[dv.productIndex];
-    const max = p.ageMax ? p.ageMax[pfaTerm(p)] : Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
+    const max = p.ageMaxByRetire ? p.ageMaxByRetire[pfaRetire(p)]
+      : p.ageMax ? p.ageMax[pfaTerm(p)] : Number(((p.ageHint || '').match(/～(\d+)/) || [])[1]);
     const over = max && r.insuranceAge > max;
     el.textContent = `保險年齡 ${r.insuranceAge} 歲　實際年齡 ${r.actualAge} 歲` + (over ? `　（超過 ${p.code} 投保年齡上限 ${max} 歲）` : '');
     el.className = over ? 'cs-age warn' : 'cs-age';
@@ -1044,12 +1066,20 @@
   // ============================================================
   const pfaCompare = {
     selected: null, basis: 'total', value: null, results: null, order: [],
-    scenario: 'most_likely', running: false, rate: null, date: '', clientLabel: '',
+    scenario: 'most_likely', running: false, rate: null, date: '', clientLabel: '', retire: 65,
   };
+  function pcRetMode() { return dv.moduleIndex !== null && pcIsRetModule(MODULES[dv.moduleIndex]); }
+  function pcRetAges() { return [...new Set(pcProducts().flatMap(p => p.retireOptions || []))].sort((a, b) => a - b); }
   const PC_YEARS = [5, 10, 15, 20, 30];
 
   // 比較商品：保額型分紅與利變型保單的商品可以放在一起比較
-  function pcModules() { return MODULES.filter(m => m.products.length && m.products.every(p => p.calcType === 'PFA')); }
+  function pcIsRetModule(m) { return m.products.every(p => p.tableType === 'RET'); }
+  function pcModules() {
+    const all = MODULES.filter(m => m.products.length && m.products.every(p => p.calcType === 'PFA'));
+    // 退休規劃商品只和退休規劃商品比較；分紅與利變型可一起比較
+    const inRet = dv.moduleIndex !== null && pcIsRetModule(MODULES[dv.moduleIndex]);
+    return all.filter(m => pcIsRetModule(m) === inRet);
+  }
   function pcProducts() { return pcModules().flatMap(m => m.products); }
   function pcCurrent() { return MODULES[dv.moduleIndex].products[dv.productIndex]; }
   function pcTypeLabel(p) { return pfaIsSingle(p) ? '躉繳' : `${p.paymentTerm} 年期`; }
@@ -1087,6 +1117,7 @@
     if (panel.style.display !== 'none') { panel.style.display = 'none'; pcUpdateButton(); return; }
     if (!pfaCompare.selected) pfaCompare.selected = new Set();
     pfaCompare.selected.add(pcCurrentKey());
+    if (pcRetMode()) pfaCompare.retire = pfaRetire(pcCurrent()) || pfaCompare.retire;
     // 預設比較基準：目前這筆試算的總繳實繳保費（台幣萬元，取 1 位小數）
     if (pfaLastResult && pfaLastResult.premiums) {
       const pr = pfaLastResult.premiums;
@@ -1107,19 +1138,26 @@
   function pcRenderPanel() {
     const panel = document.getElementById('pfa-compare');
     const variants = pcAllVariants();
+    // 只保留目前分類可比較的商品（切換到退休規劃時不帶入分紅／利變型的勾選）
+    const avail = new Set(variants.map(v => v.key));
+    [...pfaCompare.selected].forEach(k => { if (!avail.has(k)) pfaCompare.selected.delete(k); });
+    const retMode = pcRetMode();
+    const ageOk = v => !retMode || (v.p.retireOptions || []).includes(pfaCompare.retire);
     const isTotal = pfaCompare.basis === 'total';
     panel.innerHTML = `
       <div class="pc-head">
         <div class="pc-title">比較商品</div>
         <button class="pc-close" onclick="pfaToggleCompare()" aria-label="關閉">✕</button>
       </div>
-      <div class="pc-label">選擇要比較的商品（可複選，分紅與利變型可一起比較）</div>
+      ${retMode ? `<div class="pc-label">開始領取生存保險金年齡</div>
+      <div class="radio-group pc-retire">${pcRetAges().map(a => `<div class="radio-pill ${a === pfaCompare.retire ? 'active' : ''}" data-age="${a}">${a} 歲</div>`).join('')}</div>` : ''}
+      <div class="pc-label">選擇要比較的商品（可複選${retMode ? '' : '，分紅與利變型可一起比較'}）</div>
       ${pcModules().map(m => `
         <div class="pc-group">${m.icon} ${m.name}</div>
         <div class="pc-chips">
           ${m.products.flatMap(pcVariants).map(v => `
-            <button class="pc-chip ${pfaCompare.selected.has(v.key) ? 'on' : ''}" data-key="${v.key}">
-              <b>${v.p.code}</b><small>${(v.p.fullName || '').slice(0, 4)}・${v.label}</small>
+            <button class="pc-chip ${pfaCompare.selected.has(v.key) ? 'on' : ''}" data-key="${v.key}" ${ageOk(v) ? '' : `disabled title="此商品沒有 ${pfaCompare.retire} 歲領取的選項"`}>
+              <b>${v.p.code}</b><small>${v.p.shortName || (v.p.fullName || '').slice(0, 4)}・${v.label}</small>
             </button>`).join('')}
         </div>`).join('')}
       <div class="pc-label">比較基準</div>
@@ -1146,6 +1184,10 @@
       const run = document.getElementById('pc-run');
       if (!pfaCompare.running) run.textContent = `開始比較（${pfaCompare.selected.size} 項商品）`;
     }));
+    panel.querySelectorAll('.pc-retire .radio-pill').forEach(pill => pill.addEventListener('click', () => {
+      pfaCompare.retire = Number(pill.dataset.age);
+      pcRenderPanel();
+    }));
     panel.querySelectorAll('.pc-basis .radio-pill').forEach(pill => pill.addEventListener('click', () => {
       if (pill.dataset.basis === pfaCompare.basis) return;
       pfaCompare.basis = pill.dataset.basis;
@@ -1169,7 +1211,11 @@
     const rate = pfaRate.value;
     if (pfaCompare.basis === 'total' && !(rate > 0)) { out.innerHTML = '<div class="pc-err">尚未取得美元匯率</div>'; return; }
 
-    const list = pcAllVariants().filter(v => pfaCompare.selected.has(v.key));
+    const retMode = pcRetMode();
+    const list = pcAllVariants().filter(v => pfaCompare.selected.has(v.key)
+      && (!retMode || (v.p.retireOptions || []).includes(pfaCompare.retire)));
+    if (!list.length) { out.innerHTML = `<div class="pc-err">勾選的商品都沒有 ${pfaCompare.retire} 歲領取的選項</div>`; return; }
+    pfaCompare.retMode = retMode; pfaCompare.retireUsed = retMode ? pfaCompare.retire : null;
     const age = calcInsuranceAndActualAge(y, m, d, new Date());
     pfaCompare.clientLabel = `${val('pfa-name') || '客戶'}・${val('pfa-gender')}・保險年齡 ${age ? age.insuranceAge : '—'} 歲`;
     pfaCompare.rate = rate; pfaCompare.date = pfaRate.date;
@@ -1191,7 +1237,7 @@
       const payload = {
         name: val('pfa-name') || '客戶', gender: val('pfa-gender') || '女',
         birth_year: Number(y), birth_month: Number(m), birth_day: Number(d),
-        payment_term: v.term, payment_freq: v.freq,
+        payment_term: v.term, payment_freq: v.freq, retire_age: p.retireOptions ? pfaCompare.retire : undefined,
         dividend_scenario: '中分紅', relationship: val('pfa-relationship') || '同被保險人',
         discount: val('pfa-discount') || '無', death_benefit_pct: 0, installment_period: 20, want_pdf: false,
       };
@@ -1246,11 +1292,18 @@
     // 含紅利總金額（官方「年度末解約／身故時可領總金額」）；分紅為零情境的欄位可能空白，改用保證金額
     const val = (r, key) => {
       if (!r) return null;
-      if (key === 'cash') return r.total_cash_value ?? r.cash_value;
+      if (key === 'cash') {
+        const c = r.total_cash_value ?? r.cash_value;
+        // 退休商品：解約總金額加上已領生存保險金（實際拿回的總額）
+        return c === null || c === undefined ? c : c + (r.cum_survival_total || 0);
+      }
       if (key === 'death') return r.total_death_benefit ?? r.death_benefit;
       return r[key];
     };
     const at = (d, yr, key) => val(rowsOf(d).find(r => Math.round(r.policy_year) === yr), key);
+    const isRet = cols.some(c => c.p.tableType === 'RET');
+    const years = isRet ? [10, 20, 30, 40, 50] : PC_YEARS;
+    const firstSurv = d => rowsOf(d).find(r => r.survival_total > 0 || r.survival_benefit > 0);
     const ok = c => !c.d.error;
 
     // 每一列：取各商品數值，數值型的列標出最佳（最大，或回本年度最早）
@@ -1289,17 +1342,32 @@
           : { html: `${money(pr.first_year_premium)}／年<br><small>× ${pr.payment_term} 年</small>` };
       }, { highlight: false }),
       metric('總繳實繳保費', c => ({ html: money(pcPaidUsd(c.d.premiums)) }), { highlight: false }),
-      metric('回本年度<br><small>解約總金額 ≥ 累計保費</small>', c => {
+      ...(isRet ? [
+        metric('開始領取年齡', c => { const r = firstSurv(c.d); return r ? { html: `${Math.round(r.age) + 1} 歲起<br><small>第 ${Math.round(r.policy_year)} 保單年度末</small>` } : null; }, { highlight: false }),
+        metric('每年生存保險金<br><small>保證部分</small>', c => {
+          const r = firstSurv(c.d.tables.zero_possible ? { tables: { [pfaCompare.scenario]: c.d.tables.zero_possible } } : c.d);
+          return r ? { n: r.survival_benefit / pcPaidUsd(c.d.premiums), html: `${money(r.survival_benefit)}<br><small>總繳的 ${(r.survival_benefit / pcPaidUsd(c.d.premiums) * 100).toFixed(1)}%</small>` } : null;
+        }, { cls: 'pc-key' }),
+        metric('首年可領生存金<br><small>含紅利（依所選情境）</small>', c => {
+          const r = firstSurv(c.d);
+          return r ? { n: r.survival_total / pcPaidUsd(c.d.premiums), html: `${money(r.survival_total)}<br><small>總繳的 ${(r.survival_total / pcPaidUsd(c.d.premiums) * 100).toFixed(1)}%</small>` } : null;
+        }),
+        metric('累計已領生存金<br><small>領到 85 歲</small>', c => {
+          const r = rowsOf(c.d).find(x => Math.round(x.age) + 1 === 85);   // 年度末到達 85 歲
+          return r ? { n: r.cum_survival_total / pcPaidUsd(c.d.premiums), html: `${money(r.cum_survival_total)}<br><small>總繳的 ${Math.round(r.cum_survival_total / pcPaidUsd(c.d.premiums) * 100)}%</small>` } : null;
+        }),
+      ] : []),
+      metric(`回本年度<br><small>${isRet ? '解約總金額＋已領生存金 ≥ 累計保費' : '解約總金額 ≥ 累計保費'}</small>`, c => {
         const r = rowsOf(c.d).find(r => val(r, 'cash') !== null && r.cum_premium && val(r, 'cash') >= r.cum_premium);
         return r ? { n: -Math.round(r.policy_year), html: `第 ${Math.round(r.policy_year)} 年<br><small>${Math.round(r.age)} 歲</small>` } : { html: '未回本' };
       }, { cls: 'pc-key' }),
-      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? `<span class="grp">解約總金額（${bonusWord}）</span>` : ''}第 ${yr} 年`, c => {
+      ...years.map((yr, i) => metric(`${i === 0 ? `<span class="grp">${isRet ? '解約總金額＋已領生存金' : `解約總金額（${bonusWord}）`}</span>` : ''}第 ${yr} 年`, c => {
         const v = at(c.d, yr, 'cash');
         if (v === null || v === undefined) return null;
         const pct = Math.round(v / pcPaidUsd(c.d.premiums) * 100);
         return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${pct}%</small>` };
       }, { cls: i === 0 ? 'pc-grp' : '' })),
-      ...PC_YEARS.map((yr, i) => metric(`${i === 0 ? `<span class="grp">身故總金額（${bonusWord}）</span>` : ''}第 ${yr} 年`, c => {
+      ...years.map((yr, i) => metric(`${i === 0 ? `<span class="grp">身故總金額（${bonusWord}）</span>` : ''}第 ${yr} 年`, c => {
         const v = at(c.d, yr, 'death');
         if (v === null || v === undefined) return null;
         return { n: v / pcPaidUsd(c.d.premiums), html: `${money(v)}<br><small>總繳的 ${(v / pcPaidUsd(c.d.premiums)).toFixed(1)} 倍</small>` };
@@ -1308,14 +1376,14 @@
 
     out.innerHTML = `
       <div class="pc-result-head">
-        <div class="pc-client">${csEsc(pfaCompare.clientLabel)}｜${pfaCompare.basis === 'total' ? `總繳保費 ${pfaCompare.value} 萬台幣` : `保額 ${pfaCompare.value} 萬美元`}</div>
+        <div class="pc-client">${csEsc(pfaCompare.clientLabel)}｜${pfaCompare.basis === 'total' ? `總繳保費 ${pfaCompare.value} 萬台幣` : `保額 ${pfaCompare.value} 萬美元`}${pfaCompare.retireUsed ? `｜${pfaCompare.retireUsed} 歲起領` : ''}</div>
         <button class="pfa-currency-btn ${twd ? 'active' : ''}" id="pc-currency">${twd ? '顯示美元' : `換算新台幣<small>${pfaCompare.date ? pfaCompare.date + ' ' : ''}匯率 ${pfaCompare.rate}</small>`}</button>
       </div>
       <div class="scenario-tabs pc-scen">${scenarios}</div>
       ${missing.length ? `<div class="pc-note">${missing.join('、')} 的官方試算表未提供此情境，該欄顯示「—」。</div>` : ''}
       ${ulFixed.length ? `<div class="pc-note">${ulFixed.join('、')} 為利變型商品，沒有分紅情境，一律以目前宣告利率（含增值回饋分享金）計算。</div>` : ''}
       <div class="pc-table-wrap"><table class="pc-table">${head}${body}</table></div>
-      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isDiv
+      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isRet ? '退休商品的「解約總金額＋已領生存金」＝年度末解約時可領總金額＋累計已領生存保險金（含紅利），代表解約時實際拿回的總額。' : ''}${isDiv
         ? '分紅商品的解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證。' : ''}${isUL
         ? '利變型商品為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依目前宣告利率累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證。' : ''}實際以保單條款及建議書為準。${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
     `;
@@ -1343,6 +1411,11 @@
     return (product.freqOptions || []).length === 1 && product.freqOptions[0] === '躉繳';
   }
   // 目前選定的繳費年期：多年期商品取下拉選單；FBX 躉繳=1、分期=2；其餘為商品固定年期
+  function pfaRetire(product) {
+    if (!product.retireOptions) return null;
+    const el = document.getElementById('pfa-retire');
+    return el ? Number(el.value) : product.retireDefault;
+  }
   function pfaTerm(product) {
     if (product.termOptions) {
       const el = document.getElementById('pfa-term');
@@ -1471,6 +1544,10 @@
               ? `<select id="pfa-term">${product.termOptions.map(t => `<option value="${t}">${t} 年期</option>`).join('')}</select>`
               : `<input type="text" id="pfa-term-display" value="${pfaIsSingle(product) ? '躉繳（一次繳清）' : product.paymentTerm + ' 年期'}（${product.code}）" disabled style="background:#f0f0f2;color:#86868b;">`}
           </div>
+          ${product.retireOptions ? `<div class="field">
+            <label>開始領取生存保險金年齡</label>
+            <select id="pfa-retire">${product.retireOptions.map(a => `<option value="${a}" ${a === product.retireDefault ? 'selected' : ''}>${a} 歲起每年領</option>`).join('')}</select>
+          </div>` : ''}
           <div class="field">
             <label>繳別</label>
             <select id="pfa-payment-freq" ${(product.freqOptions || []).length === 1 ? 'disabled style="background:#f0f0f2;color:#86868b;"' : ''}>
@@ -1627,6 +1704,7 @@
       birth_month: Number(birthMonth),
       birth_day: Number(birthDay),
       payment_term: pfaTerm(product),
+      retire_age: pfaRetire(product),
       payment_freq: document.getElementById('pfa-payment-freq').value,
       dividend_scenario: document.getElementById('pfa-dividend-scenario').value,
       bonus_method: (document.getElementById('pfa-bonus-method') || {}).value,
@@ -1656,7 +1734,7 @@
       payload.input_mode = 'premium';
       payload.premium_amount = annualUsd;
     }
-    pfaLastCalc = { rate: rate > 0 ? rate : null, term: pfaTerm(product), date: rate === pfaRate.value ? pfaRate.date : '' };
+    pfaLastCalc = { rate: rate > 0 ? rate : null, term: pfaTerm(product), retire: pfaRetire(product), date: rate === pfaRate.value ? pfaRate.date : '' };
     pfaCurrentProduct = product;
 
     btn.disabled = true;
@@ -1696,6 +1774,16 @@
     { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
     { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
     { key: 'surrender_gain', label: '解約獲利', calc: true },
+  ];
+  const RET_TABLE_COLUMNS = [
+    { key: 'policy_year', label: '保單年度' },
+    { key: 'age', label: '保險年齡' },
+    { key: 'cum_premium', label: '累計實繳保費' },
+    { key: 'survival_total', label: '當年度可領<br>生存保險金', blankZero: true },
+    { key: 'cum_survival_total', label: '累計已領<br>生存保險金', blankZero: true },
+    { key: 'total_death_benefit', fallback: 'death_benefit', label: '年度末身故時<br>可領總金額' },
+    { key: 'total_cash_value', fallback: 'cash_value', label: '年度末解約時<br>可領總金額' },
+    { key: 'surrender_gain', label: '解約獲利<br><small>含已領生存金</small>', calc: true },
   ];
   const PFA_TABLE_COLUMNS = [
     { key: 'policy_year', label: '保單年度' },
@@ -1737,6 +1825,17 @@
       ${pfaLastCalc.rate ? `<div class="summary-tile"><div class="label">首年實繳（折合台幣，${rateLabel}）</div><div class="value">${twdWan(p.first_year_premium)} 萬</div></div>
       <div class="summary-tile"><div class="label">${term} 年總繳實繳（折合台幣）</div><div class="value">${twdWan(totalUsd)} 萬</div></div>` : ''}
     `;
+    }
+
+    if (pfaCurrentProduct && pfaCurrentProduct.tableType === 'RET') {
+      const first = key => ((data.tables[key] || {}).rows || []).find(r => r.survival_total > 0 || r.survival_benefit > 0);
+      const g = first('zero_possible') || first('most_likely');
+      const m = first('most_likely');
+      const twdNote = v => pfaLastCalc.rate ? `<div class="note">≈ 台幣 ${twdWan(v)} 萬</div>` : '';
+      if (g || m) summaryEl.insertAdjacentHTML('beforeend', `
+      <div class="summary-tile ret"><div class="label">開始領取</div><div class="value">${Math.round((m || g).age) + 1} 歲起<small>（第 ${Math.round((m || g).policy_year)} 保單年度末）</small></div></div>
+      ${g ? `<div class="summary-tile ret"><div class="label">每年生存保險金（保證）</div><div class="value">US$ ${fmtNum(g.survival_benefit)}</div>${twdNote(g.survival_benefit)}</div>` : ''}
+      ${m ? `<div class="summary-tile ret"><div class="label">首年可領（含中分紅紅利）</div><div class="value">US$ ${fmtNum(m.survival_total)}</div>${twdNote(m.survival_total)}</div>` : ''}`);
     }
 
     const tabsEl = document.getElementById('pfa-scenario-tabs');
@@ -1803,13 +1902,20 @@
     const unit = twd ? '（台幣）' : '（美元）';
     const money = v => (v === null || v === undefined || v === '') ? '—'
       : Math.round(twd ? v * pfaLastCalc.rate : v).toLocaleString('zh-TW');
-    const columns = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL' ? UL_TABLE_COLUMNS : PFA_TABLE_COLUMNS;
+    const tType = pfaCurrentProduct && pfaCurrentProduct.tableType;
+    const isRet = tType === 'RET';
+    const columns = tType === 'UL' ? UL_TABLE_COLUMNS : isRet ? RET_TABLE_COLUMNS : PFA_TABLE_COLUMNS;
     const head = '<tr>' + columns.map(c =>
       `<th>${c.label}${c.key === 'policy_year' || c.key === 'age' ? '' : `<br><small>${unit}</small>`}</th>`).join('') + '</tr>';
     const showRatio = RATIO_SCENARIOS.includes(pfaCurrentTableKey);
     const faceUsd = pfaLastResultForRatio ? pfaLastResultForRatio.premiums.final_face_amount_wan * 10000 : null;
     const pct = v => `${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
-    const cashOf = r => r ? (r.total_cash_value ?? r.cash_value) : null;
+    // 退休商品：解約價值另加上已領的生存保險金，才能反映實際拿回的總金額
+    const cashOf = r => {
+      if (!r) return null;
+      const c = r.total_cash_value ?? r.cash_value;
+      return c === null || c === undefined ? null : c + (isRet ? (r.cum_survival_total || 0) : 0);
+    };
     const ratioCells = (row, prev) => {
       const cash = cashOf(row);
       const prevCash = cashOf(prev);
@@ -1824,18 +1930,19 @@
         + `<td class="ratio">${grow === null ? '—' : (grow * 100).toFixed(1) + '%'}</td>`;
     };
     const ratioHead = showRatio
-      ? `<th class="ratio">報酬率<br><small>(解約−累計)÷累計</small></th><th class="ratio">保障比<br><small>身故÷累計保費</small></th><th class="ratio">增值率<br><small>本年÷前一年解約</small></th>`
+      ? `<th class="ratio">報酬率<br><small>${isRet ? '(解約+已領−累計)÷累計' : '(解約−累計)÷累計'}</small></th><th class="ratio">保障比<br><small>身故÷累計保費</small></th><th class="ratio">增值率<br><small>本年÷前一年解約</small></th>`
       : '';
     const body = tableData.rows.map((row, i) =>
       '<tr>' + columns.map(c => {
         if (c.key === 'policy_year' || c.key === 'age') return `<td>${row[c.key] === null || row[c.key] === undefined ? '—' : Math.round(row[c.key])}</td>`;
         if (c.key === 'surrender_gain') {
           // 解約獲利＝解約時可領總金額 − 累計實繳保費，尚未獲利（≤0）時留白
-          const cash = row.total_cash_value ?? row.cash_value;
+          const cash = cashOf(row);
           const gain = (cash !== null && cash !== undefined && row.cum_premium) ? cash - row.cum_premium : null;
           return `<td class="gain">${gain !== null && gain > 0 ? money(gain) : ''}</td>`;
         }
-        return `<td>${money(row[c.key] ?? (c.fallback ? row[c.fallback] : null))}</td>`;
+        if (c.blankZero && !row[c.key]) return '<td></td>';
+        return `<td class="${c.blankZero ? 'surv' : ''}">${money(row[c.key] ?? (c.fallback ? row[c.fallback] : null))}</td>`;
       }).join('')
       + (showRatio ? ratioCells(row, tableData.rows[i - 1]) : '') + '</tr>'
     ).join('');
@@ -1844,7 +1951,9 @@
     if (note) {
       const isUL = pfaCurrentProduct && pfaCurrentProduct.tableType === 'UL';
       note.textContent = showRatio
-        ? `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算：保障比＝身故總金額÷累計實繳保費，增值率＝本年度÷前一年度解約總金額。解約獲利＝解約總金額−累計實繳保費（尚未獲利時留白）。`
+        ? (isRet
+          ? '生存保險金於保單週年日（被保險人到達約定年齡起）每年給付，列在該保單年度（保險年齡為年度初年齡），金額含中分紅紅利增加的部分。報酬率、解約獲利、增值率以「年度末解約時可領總金額＋累計已領生存保險金」計算（即解約時實際拿回的總金額）；保障比＝身故總金額÷累計實繳保費。'
+          : `報酬率、保障比、增值率以「年度末${isUL ? '解約／身故時可領總金額（含增值回饋分享金）' : '解約／身故時可領總金額（含中分紅紅利）'}」計算：保障比＝身故總金額÷累計實繳保費，增值率＝本年度÷前一年度解約總金額。解約獲利＝解約總金額−累計實繳保費（尚未獲利時留白）。`)
         : '報酬率、保障比、增值率以中分紅（最可能紅利）計算，請切換至「最可能紅利」查看。';
     }
     const btn = document.getElementById('pfa-currency-btn');
