@@ -234,6 +234,8 @@
   .pc-close { border: none; background: #e3ecfb; color: #1e3a8a; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; }
   .pc-label { margin: 16px 0 8px; font-size: 13px; font-weight: 700; color: #5b6475; }
   .pc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pc-group { margin: 12px 0 8px; font-size: 13px; font-weight: 700; color: #4a5568; }
+  .pc-group:first-of-type { margin-top: 0; }
   .pc-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 104px; padding: 9px 12px; border-radius: 14px; border: 1.5px solid #d9e3f7; background: #fff; cursor: pointer; font-family: inherit; color: #2b3242; transition: all .15s; }
   .pc-chip b { font-size: 15px; font-weight: 800; }
   .pc-chip small { font-size: 11px; color: #7b8494; }
@@ -803,6 +805,11 @@
           faceRangeHint: "保額範圍：30 ~ 300 萬（實際上限依投保年齡可能調整，66歲以上不得承保）" },
       ]
     },
+    {
+      name: "退休規劃",
+      icon: "🏖️",
+      products: []
+    },
   ];
 
   let currentModuleIndex = null;
@@ -857,6 +864,12 @@
     parts.forEach(el => { el.style.zoom = scale; });
   }
   window.addEventListener('resize', fitHome);
+
+  // 數字欄位（生日、保額等）：游標停在欄位上滾動滑鼠時不要改變數字，改為正常捲動頁面
+  document.addEventListener('wheel', e => {
+    const el = document.activeElement;
+    if (el && el.type === 'number' && e.target === el) el.blur();
+  }, { passive: true });
 
   function showHome() {
     currentModuleIndex = null;
@@ -950,8 +963,7 @@
 
   function showDividendStudio(moduleIndex, productIndex) {
     if (dv.moduleIndex !== moduleIndex) {
-      // 換到另一個分類（保額型分紅 ↔ 利變型保單）：比較商品的選擇與結果不沿用
-      pfaCompare.selected = null; pfaCompare.results = null; pfaCompare.order = [];
+      // 換到另一個分類（保額型分紅 ↔ 利變型保單）：比較商品的選擇與結果沿用（兩類可一起比較）
       dv.productIndex = null;
     }
     dv.moduleIndex = moduleIndex;
@@ -1036,8 +1048,10 @@
   };
   const PC_YEARS = [5, 10, 15, 20, 30];
 
-  function pcProducts() { return MODULES[dv.moduleIndex].products; }
-  function pcCurrent() { return pcProducts()[dv.productIndex]; }
+  // 比較商品：保額型分紅與利變型保單的商品可以放在一起比較
+  function pcModules() { return MODULES.filter(m => m.products.length && m.products.every(p => p.calcType === 'PFA')); }
+  function pcProducts() { return pcModules().flatMap(m => m.products); }
+  function pcCurrent() { return MODULES[dv.moduleIndex].products[dv.productIndex]; }
   function pcTypeLabel(p) { return pfaIsSingle(p) ? '躉繳' : `${p.paymentTerm} 年期`; }
   function pcVariants(p) {
     if (p.termOptions) return p.termOptions.map(t => ({ key: `${p.apiProduct}-${t}`, p, term: t, freq: '年繳', label: `${t} 年期` }));
@@ -1099,13 +1113,15 @@
         <div class="pc-title">比較商品</div>
         <button class="pc-close" onclick="pfaToggleCompare()" aria-label="關閉">✕</button>
       </div>
-      <div class="pc-label">選擇要比較的商品（可複選）</div>
-      <div class="pc-chips">
-        ${variants.map(v => `
-          <button class="pc-chip ${pfaCompare.selected.has(v.key) ? 'on' : ''}" data-key="${v.key}">
-            <b>${v.p.code}</b><small>${(v.p.fullName || '').slice(0, 4)}・${v.label}</small>
-          </button>`).join('')}
-      </div>
+      <div class="pc-label">選擇要比較的商品（可複選，分紅與利變型可一起比較）</div>
+      ${pcModules().map(m => `
+        <div class="pc-group">${m.icon} ${m.name}</div>
+        <div class="pc-chips">
+          ${m.products.flatMap(pcVariants).map(v => `
+            <button class="pc-chip ${pfaCompare.selected.has(v.key) ? 'on' : ''}" data-key="${v.key}">
+              <b>${v.p.code}</b><small>${(v.p.fullName || '').slice(0, 4)}・${v.label}</small>
+            </button>`).join('')}
+        </div>`).join('')}
       <div class="pc-label">比較基準</div>
       <div class="pc-basis">
         <div class="radio-group">
@@ -1215,12 +1231,18 @@
       return v ? { p: v.p, v, d: pfaCompare.results[key] } : null;
     }).filter(c => c && c.d);
     const isUL = cols.some(c => c.p.tableType === 'UL');
-    const bonusWord = isUL ? '含增值回饋分享金' : '含紅利';
-    const keys = [...new Set(cols.filter(c => !c.d.error).flatMap(c => pfaScenarioKeys(c.d.tables)))];
+    const isDiv = cols.some(c => c.p.tableType !== 'UL');
+    const bonusWord = isUL && isDiv ? '含紅利／增值回饋分享金' : isUL ? '含增值回饋分享金' : '含紅利';
+    let keys = [...new Set(cols.filter(c => !c.d.error).flatMap(c => pfaScenarioKeys(c.d.tables)))];
+    // 分紅與利變型混合比較：情境分頁只列分紅情境，利變型商品固定用目前宣告利率
+    if (keys.some(k => k !== 'declared')) keys = keys.filter(k => k !== 'declared');
     if (keys.length && !keys.includes(pfaCompare.scenario)) pfaCompare.scenario = keys[0];
     const twd = pfaTableCurrency === 'TWD' && pfaCompare.rate > 0;
     const money = v => (v === null || v === undefined) ? '—' : (twd ? '' : 'US$ ') + Math.round(twd ? v * pfaCompare.rate : v).toLocaleString('zh-TW');
-    const rowsOf = d => (d.tables && d.tables[pfaCompare.scenario] && d.tables[pfaCompare.scenario].rows) || [];
+    const rowsOf = d => {
+      const t = d.tables && (d.tables[pfaCompare.scenario] || d.tables.declared);
+      return (t && t.rows) || [];
+    };
     // 含紅利總金額（官方「年度末解約／身故時可領總金額」）；分紅為零情境的欄位可能空白，改用保證金額
     const val = (r, key) => {
       if (!r) return null;
@@ -1250,7 +1272,8 @@
       const label = any.d.tables[key].label;
       return `<button class="scenario-tab ${key === pfaCompare.scenario ? 'active' : ''}" data-key="${key}">${label}</button>`;
     }).join('');
-    const missing = [...new Set(cols.filter(c => ok(c) && !(c.d.tables && c.d.tables[pfaCompare.scenario])).map(c => c.p.code))];
+    const missing = [...new Set(cols.filter(c => ok(c) && !(c.d.tables && (c.d.tables[pfaCompare.scenario] || c.d.tables.declared))).map(c => c.p.code))];
+    const ulFixed = [...new Set(cols.filter(c => ok(c) && c.p.tableType === 'UL' && pfaCompare.scenario !== 'declared').map(c => c.p.code))];
 
     const head = `<tr><th></th>${cols.map(c => `<th class="pc-colhead"><div class="code">${c.p.code}</div><div class="nm">${c.p.fullName || ''}</div><div class="ty">${c.v.label}</div></th>`).join('')}</tr>`;
     const errRow = cols.some(c => !ok(c))
@@ -1289,11 +1312,12 @@
         <button class="pfa-currency-btn ${twd ? 'active' : ''}" id="pc-currency">${twd ? '顯示美元' : `換算新台幣<small>${pfaCompare.date ? pfaCompare.date + ' ' : ''}匯率 ${pfaCompare.rate}</small>`}</button>
       </div>
       <div class="scenario-tabs pc-scen">${scenarios}</div>
-      ${missing.length ? `<div class="pc-note">${missing.join('、')} 的官方試算表未提供此情境（只有目前宣告利率），該欄顯示「—」。</div>` : ''}
+      ${missing.length ? `<div class="pc-note">${missing.join('、')} 的官方試算表未提供此情境，該欄顯示「—」。</div>` : ''}
+      ${ulFixed.length ? `<div class="pc-note">${ulFixed.join('、')} 為利變型商品，沒有分紅情境，一律以目前宣告利率（含增值回饋分享金）計算。</div>` : ''}
       <div class="pc-table-wrap"><table class="pc-table">${head}${body}</table></div>
-      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isUL
-        ? '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依目前宣告利率累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證，實際以保單條款及建議書為準。'
-        : '解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證，實際以保單條款及建議書為準。'}${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
+      <div class="pc-foot">★ 底色標示為該列最佳（以「相對總繳保費」比較；回本年度越早越好）。${isDiv
+        ? '分紅商品的解約／身故總金額為官方試算表「年度末解約／身故時可領總金額」：解約總金額＝保證解約金＋紅利增加保額的解約金＋終期紅利（依所選分紅情境）；「假設分紅金額可能為零」即為保證金額。紅利非保證。' : ''}${isUL
+        ? '利變型商品為官方試算表「年度末解約／身故時可領總金額（預估值）」，含依目前宣告利率累積的增值回饋分享金。宣告利率非固定，增值回饋分享金非保證。' : ''}實際以保單條款及建議書為準。${twd ? '台幣金額依比較當時匯率換算，僅供參考。' : ''}</div>
     `;
     out.querySelectorAll('.pc-scen .scenario-tab').forEach(t => t.addEventListener('click', () => {
       pfaCompare.scenario = t.dataset.key; pcRenderResult();
