@@ -1194,7 +1194,7 @@
         </div>
       </div>
       <div class="pc-note">${isTotal
-        ? `總繳保費依各商品繳費年期平均分攤（例：100 萬 → 6 年期每年約 16.7 萬、躉繳一次 100 萬），以 ${pfaRate.date ? pfaRate.date + ' ' : ''}匯率 ${pfaRate.value ?? '—'} 換算美元；保額由官方試算表換算。`
+        ? `總繳保費依各商品繳費年期平均分攤（例：100 萬 → 6 年期每年約 16.7 萬、躉繳一次 100 萬），以 ${pfaRate.date ? pfaRate.date + ' ' : ''}匯率 ${pfaRate.value ?? '—'} 換算美元；總繳保費以折扣後實繳金額計算，保額取實繳總額不超過此金額的最大保額。`
         : '各商品使用相同保額（萬美元）試算，保費依各商品費率不同。'}　繳別一律以年繳（躉繳商品為躉繳）比較。</div>
       <button class="pc-run" id="pc-run" ${pfaCompare.running ? 'disabled' : ''}>${pfaCompare.running ? '比較中…' : `開始比較（${pfaCompare.selected.size} 項商品）`}</button>
       <div id="pc-result"></div>
@@ -1264,7 +1264,11 @@
         discount: val('pfa-discount') || '無', death_benefit_pct: 0, installment_period: 20, want_pdf: false,
       };
       if (pfaCompare.basis === 'total') {
+        // 總繳保費為「折扣後實繳」金額，由後端反推保額
         payload.input_mode = 'premium';
+        payload.premium_net = true;
+        payload.premium_target = 'total';
+        payload.premium_total_amount = Math.round(pfaCompare.value * 10000 / rate);
         payload.premium_amount = Math.round(pfaCompare.value * 10000 / rate / v.term);
       } else {
         payload.input_mode = 'face_amount';
@@ -1589,12 +1593,12 @@
         </div>
         <div class="form-grid" style="margin-top:14px;">
           <div class="field pfa-mode-field" data-mode="annual_twd">
-            <label><span id="pfa-annual-label">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</span>（萬元・台幣，未折扣前）</label>
+            <label><span id="pfa-annual-label">${pfaIsSingle(product) ? '躉繳保費' : '年繳保費'}</span>（萬元・台幣，折扣後實繳）</label>
             <input type="number" id="pfa-annual-twd" value="30" min="0" step="0.1">
             <div class="field-note" id="pfa-conv-annual"></div>
           </div>
           <div class="field pfa-mode-field" data-mode="total_twd" style="display:none;">
-            <label>總繳保費（萬元・台幣，未折扣前）</label>
+            <label>總繳保費（萬元・台幣，折扣後實繳）</label>
             <input type="number" id="pfa-total-twd" value="${30 * (product.termOptions ? product.termOptions[0] : product.paymentTerm)}" min="0" step="0.1">
             <div class="field-note" id="pfa-conv-total"></div>
           </div>
@@ -1753,8 +1757,14 @@
         errorEl.style.display = 'block';
         return;
       }
+      // 年繳／總繳保費為「折扣後實繳」金額，由後端反推保額
       payload.input_mode = 'premium';
       payload.premium_amount = annualUsd;
+      payload.premium_net = true;
+      if (inputMode === 'total_twd') {
+        payload.premium_target = 'total';
+        payload.premium_total_amount = Math.round(Number(document.getElementById('pfa-total-twd').value) * 10000 / rate);
+      }
     }
     pfaLastCalc = { rate: rate > 0 ? rate : null, term: pfaTerm(product), retire: pfaRetire(product), date: rate === pfaRate.value ? pfaRate.date : '' };
     pfaCurrentProduct = product;
