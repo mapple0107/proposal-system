@@ -765,7 +765,20 @@
           faceAmountDefault: 10, faceAmountMin: 10, faceAmountStep: 1,
           faceRangeHint: "保額範圍：10 ~ 500 萬（實際上限依投保年齡可能調整）",
           hasMaturityBenefit: true },
-        { code: "SDKA", status: "pending" },
+        { code: "SDKA", status: "ready", calcType: "SD", apiProduct: "SDKA",
+          paymentTermOptions: [10],
+          ageHint: "15～61 歲（10 年期定期，保障 10 年）",
+          faceAmountDefault: 50, faceAmountMin: 50, faceAmountStep: 1,
+          faceRangeHint: "保額範圍：50 ~ 200 萬（新臺幣）",
+          tableColumns: [
+            { key: 'policy_year', label: '保單年度' },
+            { key: 'age', label: '保險年齡' },
+            { key: 'annual_premium', label: '年度實繳保費' },
+            { key: 'cum_premium', label: '累計實繳保費' },
+            { key: 'death_benefit', label: '身故/完全失能保險金' },
+            { key: 'specific_disease_benefit', label: '特定重大疾病保險金' },
+            { key: 'cash_value', label: '年度末解約金' },
+          ] },
       ]
     },
     {
@@ -3156,6 +3169,7 @@
   ];
 
   function getSDTableColumns(product) {
+    if (product.tableColumns) return product.tableColumns;
     return product.hasMaturityBenefit
       ? [...SD_TABLE_COLUMNS_BASE, SD_TABLE_COLUMN_MATURITY, ...SD_TABLE_COLUMNS_TAIL]
       : [...SD_TABLE_COLUMNS_BASE, ...SD_TABLE_COLUMNS_TAIL];
@@ -3224,6 +3238,7 @@
       <div class="summary-tile"><div class="label">年繳保費</div><div class="value">${fmtNum(p.annual_premium_gross)}</div></div>
       <div class="summary-tile"><div class="label">首年實繳保費</div><div class="value">${fmtNum(p.first_year_premium)}</div></div>
       <div class="summary-tile"><div class="label">續年實繳保費</div><div class="value">${fmtNum(p.renewal_year_premium)}</div></div>
+      ${p.no_claim_benefit ? `<div class="summary-tile"><div class="label">滿期無理賠回饋保險金</div><div class="value">${fmtNum(p.no_claim_benefit)}</div></div>` : ''}
     `;
 
     const columns = getSDTableColumns(product);
