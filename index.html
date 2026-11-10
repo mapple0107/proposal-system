@@ -1104,7 +1104,7 @@
   };
   function pcRetMode() { return dv.moduleIndex !== null && pcIsRetModule(MODULES[dv.moduleIndex]); }
   function pcRetAges() { return [...new Set(pcProducts().flatMap(p => p.retireOptions || []))].sort((a, b) => a - b); }
-  const PC_YEARS = [5, 10, 15, 20, 30];
+  const PC_YEARS = [6, 10, 15, 20, 30];
 
   // 比較商品：保額型分紅與利變型保單的商品可以放在一起比較
   function pcIsRetModule(m) { return m.products.every(p => p.tableType === 'RET'); }
