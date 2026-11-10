@@ -241,7 +241,7 @@
   .pc-group { margin: 12px 0 8px; font-size: 13px; font-weight: 700; color: #4a5568; }
   .pc-group:first-of-type { margin-top: 0; }
   .pc-chip:disabled { opacity: .35; cursor: not-allowed; }
-  .pc-retire { margin-bottom: 14px; }
+  .pc-retire, .pc-ulbonus { margin-bottom: 14px; }
   .pc-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 104px; padding: 9px 12px; border-radius: 14px; border: 1.5px solid #d9e3f7; background: #fff; cursor: pointer; font-family: inherit; color: #2b3242; transition: all .15s; }
   .pc-chip b { font-size: 15px; font-weight: 800; }
   .pc-chip small { font-size: 11px; color: #7b8494; }
@@ -1101,6 +1101,8 @@
   const pfaCompare = {
     selected: null, basis: 'total', value: null, results: null, order: [],
     scenario: 'most_likely', running: false, rate: null, date: '', clientLabel: '', retire: 65,
+    // 利變型商品的增值回饋分享金給付方式（比較預設購買增額繳清，身故保障才會持續增加）
+    ulBonus: '購買增額繳清保險金額', ulBonusUsed: null,
   };
   function pcRetMode() { return dv.moduleIndex !== null && pcIsRetModule(MODULES[dv.moduleIndex]); }
   function pcRetAges() { return [...new Set(pcProducts().flatMap(p => p.retireOptions || []))].sort((a, b) => a - b); }
@@ -1195,6 +1197,10 @@
               <b>${v.p.code}</b><small>${v.p.shortName || (v.p.fullName || '').slice(0, 4)}・${v.label}</small>
             </button>`).join('')}
         </div>`).join('')}
+      ${!retMode && pcProducts().some(p => p.tableType === 'UL') ? `<div class="pc-label">利變型：增值回饋分享金給付方式</div>
+      <div class="radio-group pc-ulbonus">
+        ${['購買增額繳清保險金額', '儲存生息'].map(v => `<div class="radio-pill ${pfaCompare.ulBonus === v ? 'active' : ''}" data-v="${v}">${v === '儲存生息' ? '儲存生息' : '購買增額繳清'}</div>`).join('')}
+      </div>` : ''}
       <div class="pc-label">比較基準</div>
       <div class="pc-basis">
         <div class="radio-group">
@@ -1218,6 +1224,10 @@
       chip.classList.toggle('on');
       const run = document.getElementById('pc-run');
       if (!pfaCompare.running) run.textContent = `開始比較（${pfaCompare.selected.size} 項商品）`;
+    }));
+    panel.querySelectorAll('.pc-ulbonus .radio-pill').forEach(pill => pill.addEventListener('click', () => {
+      pfaCompare.ulBonus = pill.dataset.v;
+      pcRenderPanel();
     }));
     panel.querySelectorAll('.pc-retire .radio-pill').forEach(pill => pill.addEventListener('click', () => {
       pfaCompare.retire = Number(pill.dataset.age);
@@ -1251,6 +1261,7 @@
       && (!retMode || (v.p.retireOptions || []).includes(pfaCompare.retire)));
     if (!list.length) { out.innerHTML = `<div class="pc-err">勾選的商品都沒有 ${pfaCompare.retire} 歲領取的選項</div>`; return; }
     pfaCompare.retMode = retMode; pfaCompare.retireUsed = retMode ? pfaCompare.retire : null;
+    pfaCompare.ulBonusUsed = list.some(v => v.p.tableType === 'UL') ? pfaCompare.ulBonus : null;
     const age = calcInsuranceAndActualAge(y, m, d, new Date());
     pfaCompare.clientLabel = `${val('pfa-name') || '客戶'}・${val('pfa-gender')}・保險年齡 ${age ? age.insuranceAge : '—'} 歲`;
     pfaCompare.rate = rate; pfaCompare.date = pfaRate.date;
@@ -1273,6 +1284,7 @@
         name: val('pfa-name') || '客戶', gender: val('pfa-gender') || '女',
         birth_year: Number(y), birth_month: Number(m), birth_day: Number(d),
         payment_term: v.term, payment_freq: v.freq, retire_age: p.retireOptions ? pfaCompare.retire : undefined,
+        bonus_method: p.tableType === 'UL' ? pfaCompare.ulBonus : undefined,
         dividend_scenario: '中分紅', relationship: val('pfa-relationship') || '同被保險人',
         discount: val('pfa-discount') || '無', death_benefit_pct: 0, installment_period: 20, want_pdf: false,
       };
@@ -1415,7 +1427,7 @@
 
     out.innerHTML = `
       <div class="pc-result-head">
-        <div class="pc-client">${csEsc(pfaCompare.clientLabel)}｜${pfaCompare.basis === 'total' ? `總繳保費 ${pfaCompare.value} 萬台幣` : `保額 ${pfaCompare.value} 萬美元`}${pfaCompare.retireUsed ? `｜${pfaCompare.retireUsed} 歲起領` : ''}</div>
+        <div class="pc-client">${csEsc(pfaCompare.clientLabel)}｜${pfaCompare.basis === 'total' ? `總繳保費 ${pfaCompare.value} 萬台幣` : `保額 ${pfaCompare.value} 萬美元`}${pfaCompare.retireUsed ? `｜${pfaCompare.retireUsed} 歲起領` : ''}${pfaCompare.ulBonusUsed ? `｜利變型分享金：${pfaCompare.ulBonusUsed === '儲存生息' ? '儲存生息' : '購買增額繳清'}` : ''}</div>
         <button class="pfa-currency-btn ${twd ? 'active' : ''}" id="pc-currency">${twd ? '顯示美元' : `換算新台幣<small>${pfaCompare.date ? pfaCompare.date + ' ' : ''}匯率 ${pfaCompare.rate}</small>`}</button>
       </div>
       <div class="scenario-tabs pc-scen">${scenarios}</div>
