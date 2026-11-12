@@ -759,6 +759,12 @@
           faceAmountDefault: 100, faceAmountMin: 10, faceAmountStep: 1,
           faceRangeHint: "保額範圍：10 ~ 500 萬（實際上限依投保年齡可能調整）",
           hasMaturityBenefit: true },
+        { code: "SDP", status: "ready", calcType: "SD", apiProduct: "SDP",
+          paymentTermOptions: [10, 15, 20, 30],
+          ageHint: "10年期 0～60歲；15年期 0～55歲；20年期 0～50歲；30年期 0～40歲（保險期間＝繳費年期＋35年）",
+          faceAmountDefault: 100, faceAmountMin: 10, faceAmountStep: 1,
+          faceRangeHint: "保額範圍：10 ~ 500 萬（新臺幣）",
+          hasMaturityBenefit: true, maturityLabel: '生存保險金' },
         { code: "SDJ", status: "ready", calcType: "SD", apiProduct: "SDJ",
           paymentTermOptions: [20],
           ageHint: "20年期 0足歲～50歲（保障至84歲）",
@@ -3183,7 +3189,7 @@
   function getSDTableColumns(product) {
     if (product.tableColumns) return product.tableColumns;
     return product.hasMaturityBenefit
-      ? [...SD_TABLE_COLUMNS_BASE, SD_TABLE_COLUMN_MATURITY, ...SD_TABLE_COLUMNS_TAIL]
+      ? [...SD_TABLE_COLUMNS_BASE, product.maturityLabel ? { ...SD_TABLE_COLUMN_MATURITY, label: product.maturityLabel } : SD_TABLE_COLUMN_MATURITY, ...SD_TABLE_COLUMNS_TAIL]
       : [...SD_TABLE_COLUMNS_BASE, ...SD_TABLE_COLUMNS_TAIL];
   }
 
